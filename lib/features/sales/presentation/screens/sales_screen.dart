@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../billing_pos/presentation/notifier/billing_notifier.dart';
-import '../../../billing_pos/presentation/state/billing_state.dart';
 import '../../../billing_pos/domain/models/invoice.dart';
 
 class SalesScreen extends ConsumerStatefulWidget {
@@ -13,12 +12,27 @@ class SalesScreen extends ConsumerStatefulWidget {
 }
 
 class _SalesScreenState extends ConsumerState<SalesScreen> {
+  static const primaryTeal = Color(0xFF0F766E);
+  static const textDark = Color(0xFF0F172A);
+  static const softGrey = Color(0xFF64748B);
+  static const bgGrey = Color(0xFFF4F7FA);
+  static const borderGrey = Color(0xFFE2E8F0);
+
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _statusFilter = 'All'; // 'All', 'FINALIZED', 'CANCELLED'
   String _dateFilter = 'Today'; // 'Today', 'Yesterday', 'Last 7 Days', 'All'
 
   Invoice? _selectedInvoice; // For receipt detail side drawer/dialog
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(billingNotifierProvider.notifier).loadInvoices();
+      ref.read(billingNotifierProvider.notifier).loadAnalytics();
+    });
+  }
 
   @override
   void dispose() {
@@ -131,28 +145,27 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                 Navigator.pop(context); // Close dialog
 
                 final success = await ref.read(billingNotifierProvider.notifier).cancelInvoice(invoice.id, reason);
-                if (mounted) {
-                  if (success) {
-                    setState(() {
-                      _selectedInvoice = null; // Close details drawer
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Invoice ${invoice.invoiceNumber} cancelled successfully.'),
-                        backgroundColor: const Color(0xFF0D9488),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  } else {
-                    final err = ref.read(billingNotifierProvider).errorMessage ?? 'Cancellation failed';
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(err),
-                        backgroundColor: const Color(0xFFEF4444),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
+                if (!context.mounted) return;
+                if (success) {
+                  setState(() {
+                    _selectedInvoice = null; // Close details drawer
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Invoice ${invoice.invoiceNumber} cancelled successfully.'),
+                      backgroundColor: const Color(0xFF0D9488),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                } else {
+                  final err = ref.read(billingNotifierProvider).errorMessage ?? 'Cancellation failed';
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(err),
+                      backgroundColor: const Color(0xFFEF4444),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
                 }
               },
               child: const Text('Void Transaction', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -165,12 +178,6 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const primaryTeal = Color(0xFF0F766E);
-    const textDark = Color(0xFF0F172A);
-    const softGrey = Color(0xFF64748B);
-    const bgGrey = Color(0xFFF4F7FA);
-    const borderGrey = Color(0xFFE2E8F0);
-
     final billingState = ref.watch(billingNotifierProvider);
     final filteredInvoices = _filterInvoices(billingState.invoices);
 
@@ -421,7 +428,6 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                             DataColumn(label: Text('STATUS', style: TextStyle(fontWeight: FontWeight.bold, color: softGrey, fontSize: 11))),
                                           ],
                                           rows: filteredInvoices.map((inv) {
-                                            final isCancelled = inv.status == 'CANCELLED';
                                             return DataRow(
                                               selected: _selectedInvoice?.id == inv.id,
                                               onSelectChanged: (_) {
@@ -466,7 +472,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                       color: Colors.white,
                       border: Border(left: BorderSide(color: borderGrey, width: 1.5)),
                     ),
-                    child: _buildReceiptPanel(_selectedInvoice!, primaryTeal, textDark, softGrey, borderGrey),
+                    child: _buildReceiptPanel(_selectedInvoice!),
                   ),
               ],
             ),
@@ -524,7 +530,6 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
   }
 
   Widget _buildPaymentBreakdownCard({required double cash, required double upi, required double card}) {
-    const textDark = Color(0xFF0F172A);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -584,13 +589,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     );
   }
 
-  Widget _buildReceiptPanel(
-    Invoice invoice,
-    Color primaryTeal,
-    Color textDark,
-    Color softGrey,
-    Color borderGrey,
-  ) {
+  Widget _buildReceiptPanel(Invoice invoice) {
     final isCancelled = invoice.status == 'CANCELLED';
 
     return Column(
