@@ -366,6 +366,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               keyboardType: TextInputType.emailAddress,
               validator: (val) {
                 if (val == null || val.isEmpty) return 'Please enter your email';
+                // ignore: deprecated_member_use
                 if (!RegExp(r'^^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) {
                   return 'Please enter a valid email address';
                 }
@@ -438,7 +439,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 color: primaryTeal,
                 boxShadow: [
                   BoxShadow(
-                    color: primaryTeal.withOpacity(0.15),
+                    color: primaryTeal.withValues(alpha: 0.15),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -577,6 +578,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               keyboardType: TextInputType.emailAddress,
               validator: (val) {
                 if (val == null || val.isEmpty) return 'Please enter your email';
+                // ignore: deprecated_member_use
                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) {
                   return 'Please enter a valid email address';
                 }
@@ -691,7 +693,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 color: primaryTeal,
                 boxShadow: [
                   BoxShadow(
-                    color: primaryTeal.withOpacity(0.15),
+                    color: primaryTeal.withValues(alpha: 0.15),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -854,7 +856,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         border: Border.all(color: borderGrey),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -870,7 +872,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   CircleAvatar(
                     radius: 14,
-                    backgroundColor: primaryTeal.withOpacity(0.1),
+                    backgroundColor: primaryTeal.withValues(alpha: 0.1),
                     child: Icon(Icons.analytics_outlined, color: primaryTeal, size: 14),
                   ),
                   const SizedBox(width: 8),
@@ -883,7 +885,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.12),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
@@ -898,12 +900,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _buildMockBar(35, primaryTeal.withOpacity(0.3)),
-              _buildMockBar(55, primaryTeal.withOpacity(0.5)),
-              _buildMockBar(25, primaryTeal.withOpacity(0.3)),
-              _buildMockBar(70, primaryTeal.withOpacity(0.8)),
+              _buildMockBar(35, primaryTeal.withValues(alpha: 0.3)),
+              _buildMockBar(55, primaryTeal.withValues(alpha: 0.5)),
+              _buildMockBar(25, primaryTeal.withValues(alpha: 0.3)),
+              _buildMockBar(70, primaryTeal.withValues(alpha: 0.8)),
               _buildMockBar(90, primaryTeal),
-              _buildMockBar(45, primaryTeal.withOpacity(0.5)),
+              _buildMockBar(45, primaryTeal.withValues(alpha: 0.5)),
               _buildMockBar(65, primaryTeal),
             ],
           ),
@@ -1004,6 +1006,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               keyboardType: TextInputType.emailAddress,
               validator: (val) {
                 if (val == null || val.isEmpty) return 'Please enter your email';
+                // ignore: deprecated_member_use
                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) {
                   return 'Please enter a valid email address';
                 }

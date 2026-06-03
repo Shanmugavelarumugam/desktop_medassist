@@ -96,7 +96,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF007AFF).withOpacity(0.08),
+                        color: const Color(0xFF007AFF).withValues(alpha: 0.08),
                         blurRadius: 100,
                         spreadRadius: 50,
                       ),
@@ -121,17 +121,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: isDark
-                                  ? const Color(0xFF1E293B).withOpacity(0.7)
+                                  ? const Color(0xFF1E293B).withValues(alpha: 0.7)
                                   : Colors.white,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF007AFF).withOpacity(isDark ? 0.15 : 0.08),
+                                  color: const Color(0xFF007AFF).withValues(alpha: isDark ? 0.15 : 0.08),
                                   blurRadius: 30,
                                   spreadRadius: 5,
                                 ),
                               ],
                               border: Border.all(
-                                color: const Color(0xFF007AFF).withOpacity(0.15),
+                                color: const Color(0xFF007AFF).withValues(alpha: 0.15),
                                 width: 1.5,
                               ),
                             ),

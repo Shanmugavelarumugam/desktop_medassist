@@ -78,7 +78,7 @@ class ModuleLayout extends StatelessWidget {
               border: Border.all(color: borderGrey),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -101,7 +101,7 @@ class ModuleLayout extends StatelessWidget {
                 border: Border.all(color: borderGrey),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.015),
+                    color: Colors.black.withValues(alpha: 0.015),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),

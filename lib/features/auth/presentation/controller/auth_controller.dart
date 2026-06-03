@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../domain/repository/auth_repository.dart';
 import '../../data/repository/auth_repository_impl.dart';
 import '../../domain/usecases/login_usecase.dart';
@@ -18,6 +20,14 @@ class AuthController extends Notifier<AuthState> {
     _registerUseCase = ref.watch(registerUseCaseProvider);
     _logoutUseCase = ref.watch(logoutUseCaseProvider);
     _repository = ref.watch(authRepositoryProvider);
+
+    // Listen to session expired event to trigger logout
+    ref.listen<bool>(sessionExpiredProvider, (previous, next) {
+      if (next) {
+        logout();
+        ref.read(sessionExpiredProvider.notifier).reset();
+      }
+    });
 
     return const AuthState();
   }
@@ -60,13 +70,13 @@ class AuthController extends Notifier<AuthState> {
       );
 
       // Print statements for debugging state updates
-      print("LOGIN SUCCESS");
-      print("isAuthenticated: ${state.isAuthenticated}");
-      print("User FullName: ${state.user?.fullName}");
+      debugPrint("LOGIN SUCCESS");
+      debugPrint("isAuthenticated: ${state.isAuthenticated}");
+      debugPrint("User FullName: ${state.user?.fullName}");
 
       return true;
     } catch (e) {
-      print("LOGIN ERROR IN CONTROLLER: $e");
+      debugPrint("LOGIN ERROR IN CONTROLLER: $e");
       state = AuthState(
         isAuthenticated: false,
         isLoading: false,

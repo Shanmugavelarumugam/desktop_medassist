@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,10 +33,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isLogin = state.matchedLocation == RoutePaths.login;
       final isSignUp = state.matchedLocation == RoutePaths.signup;
 
-      // Debug prints as requested
-      print("AUTH STATUS IN REDIRECT:");
-      print("isAuthenticated: $isLoggedIn");
-      print("matchedLocation: ${state.matchedLocation}");
+      // Debug prints as requested (only in debug mode)
+      if (kDebugMode) {
+        print("AUTH STATUS IN REDIRECT:");
+        print("isAuthenticated: $isLoggedIn");
+        print("matchedLocation: ${state.matchedLocation}");
+      }
 
       // While splash screen animation runs, do not redirect immediately.
       // After animation completes, we transition according to authState.

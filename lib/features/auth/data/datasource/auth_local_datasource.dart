@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../domain/models/auth_user.dart';
 
 abstract class AuthLocalDataSource {
@@ -14,56 +14,55 @@ abstract class AuthLocalDataSource {
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
+  final _secureStorage = const FlutterSecureStorage();
+
   static const _tokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
   static const _userKey = 'auth_user';
 
   @override
   Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    await _secureStorage.write(key: _tokenKey, value: token);
   }
 
   @override
   Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    return await _secureStorage.read(key: _tokenKey);
   }
 
   @override
   Future<void> saveRefreshToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_refreshTokenKey, token);
+    await _secureStorage.write(key: _refreshTokenKey, value: token);
   }
 
   @override
   Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_refreshTokenKey);
+    return await _secureStorage.read(key: _refreshTokenKey);
   }
 
   @override
   Future<void> saveUser(AuthUser user) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, jsonEncode(user.toJson()));
+    await _secureStorage.write(key: _userKey, value: jsonEncode(user.toJson()));
   }
 
   @override
   Future<AuthUser?> getUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userString = prefs.getString(_userKey);
+    final userString = await _secureStorage.read(key: _userKey);
     if (userString != null) {
-      return AuthUser.fromJson(jsonDecode(userString));
+      try {
+        return AuthUser.fromJson(jsonDecode(userString));
+      } catch (_) {
+        return null;
+      }
     }
     return null;
   }
 
   @override
   Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_refreshTokenKey);
-    await prefs.remove(_userKey);
+    await _secureStorage.delete(key: _tokenKey);
+    await _secureStorage.delete(key: _refreshTokenKey);
+    await _secureStorage.delete(key: _userKey);
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:developer' as developer;
 import '../../domain/models/auth_user.dart';
 import '../../domain/repository/auth_repository.dart';
 import '../datasource/auth_local_datasource.dart';
@@ -31,10 +32,10 @@ class AuthRepositoryImpl implements AuthRepository {
         throw Exception(response.data?['error']?['message'] ?? 'Authentication failed');
       }
     } on DioException catch (e) {
-      print("DioException in Repository: ${e.response?.data}");
+      developer.log("DioException in Repository: ${e.response?.data}");
       throw Exception(e.response?.data?['error']?['message'] ?? 'Network error');
     } catch (e) {
-      print("Exception in Repository login: $e");
+      developer.log("Exception in Repository login: $e");
       throw Exception(e.toString());
     }
   }
