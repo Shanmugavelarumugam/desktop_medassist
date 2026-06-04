@@ -84,6 +84,10 @@ _Medicine _$MedicineFromJson(Map<String, dynamic> json) => _Medicine(
   expiryDate: json['expiryDate'] as String?,
   mrp: (json['mrp'] as num?)?.toDouble() ?? 0.0,
   purchasePrice: (json['purchasePrice'] as num?)?.toDouble() ?? 0.0,
+  hsnCode: json['hsnCode'] as String?,
+  barcode: json['barcode'] as String?,
+  supplier: json['supplier'] as String?,
+  notes: json['notes'] as String?,
 );
 
 Map<String, dynamic> _$MedicineToJson(_Medicine instance) => <String, dynamic>{
@@ -110,4 +114,8 @@ Map<String, dynamic> _$MedicineToJson(_Medicine instance) => <String, dynamic>{
   'expiryDate': instance.expiryDate,
   'mrp': instance.mrp,
   'purchasePrice': instance.purchasePrice,
+  'hsnCode': instance.hsnCode,
+  'barcode': instance.barcode,
+  'supplier': instance.supplier,
+  'notes': instance.notes,
 };

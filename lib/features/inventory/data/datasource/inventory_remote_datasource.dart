@@ -19,6 +19,13 @@ abstract class InventoryRemoteDataSource {
     required String expiryDate,
     required String categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   });
 
   Future<Medicine> updateMedicine({
@@ -27,6 +34,13 @@ abstract class InventoryRemoteDataSource {
     String? genericName,
     String? categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   });
 
   Future<void> deleteMedicine({required String id});
@@ -121,14 +135,27 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     required String expiryDate,
     required String categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   }) async {
     try {
       final response = await _dio.post('/api/inventory/medicines', data: {
         'name': name.trim(),
         'genericName': genericName.trim(),
         'categoryId': categoryId,
-        'gstPercentage': 12.0, // Default for pharmacy
+        'gstPercentage': gstPercentage ?? 12.0,
+        'reorderLevel': reorderLevel ?? 10,
+        'prescriptionRequired': prescriptionRequired ?? false,
         'manufacturerId': ?manufacturerId,
+        'hsnCode': ?hsnCode?.trim(),
+        'barcode': ?barcode?.trim(),
+        'supplier': ?supplier?.trim(),
+        'notes': ?notes?.trim(),
         'initialBatch': {
           'batchNumber': batchNumber.trim(),
           'expiryDate': expiryDate,
@@ -154,6 +181,13 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     String? genericName,
     String? categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   }) async {
     try {
       final response = await _dio.put('/api/inventory/medicines/$id', data: {
@@ -161,6 +195,13 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
         'genericName': ?genericName?.trim(),
         'categoryId': ?categoryId,
         'manufacturerId': ?manufacturerId,
+        'gstPercentage': ?gstPercentage,
+        'reorderLevel': ?reorderLevel,
+        'prescriptionRequired': ?prescriptionRequired,
+        'hsnCode': ?hsnCode?.trim(),
+        'barcode': ?barcode?.trim(),
+        'supplier': ?supplier?.trim(),
+        'notes': ?notes?.trim(),
       });
 
       if (response.data != null && response.data['success'] == true) {

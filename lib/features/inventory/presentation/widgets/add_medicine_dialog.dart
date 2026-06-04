@@ -21,8 +21,17 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
   final _quantityController = TextEditingController();
   final _expiryDateController = TextEditingController();
   
+  // Additional fields controllers
+  final _reorderLevelController = TextEditingController(text: '10');
+  final _hsnCodeController = TextEditingController();
+  final _barcodeController = TextEditingController();
+  final _supplierController = TextEditingController();
+  final _notesController = TextEditingController();
+
   String? _selectedCategoryId;
   String? _selectedManufacturerId;
+  String _selectedSchedule = 'OTC';
+  String _selectedGst = '12%';
   bool _submitting = false;
 
   @override
@@ -33,6 +42,14 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
       _genericNameController.text = widget.medicine!.genericName ?? '';
       _selectedCategoryId = widget.medicine!.categoryId;
       _selectedManufacturerId = widget.medicine!.manufacturerId;
+      _selectedSchedule = widget.medicine!.prescriptionRequired == true ? 'Rx' : 'OTC';
+      _reorderLevelController.text = (widget.medicine!.reorderLevel ?? 10).toString();
+      _selectedGst = widget.medicine!.gstPercentage != null 
+          ? '${widget.medicine!.gstPercentage!.toInt()}%' 
+          : '12%';
+    } else {
+      _quantityController.text = '0';
+      _purchasePriceController.text = '0.00';
     }
   }
 
@@ -45,6 +62,11 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
     _batchNumberController.dispose();
     _quantityController.dispose();
     _expiryDateController.dispose();
+    _reorderLevelController.dispose();
+    _hsnCodeController.dispose();
+    _barcodeController.dispose();
+    _supplierController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -88,6 +110,10 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
 
       setState(() => _submitting = true);
 
+      final gstPercentage = double.tryParse(_selectedGst.replaceAll('%', '')) ?? 12.0;
+      final reorderLevel = int.tryParse(_reorderLevelController.text.trim()) ?? 10;
+      final prescriptionRequired = _selectedSchedule == 'Rx';
+
       final bool success;
       if (widget.medicine != null) {
         // Edit mode
@@ -97,6 +123,13 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
           genericName: _genericNameController.text.trim(),
           categoryId: _selectedCategoryId!,
           manufacturerId: _selectedManufacturerId,
+          gstPercentage: gstPercentage,
+          reorderLevel: reorderLevel,
+          prescriptionRequired: prescriptionRequired,
+          hsnCode: _hsnCodeController.text.trim().isEmpty ? null : _hsnCodeController.text.trim(),
+          barcode: _barcodeController.text.trim().isEmpty ? null : _barcodeController.text.trim(),
+          supplier: _supplierController.text.trim().isEmpty ? null : _supplierController.text.trim(),
+          notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         );
       } else {
         // Add mode
@@ -110,6 +143,13 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
           expiryDate: DateTime.parse(_expiryDateController.text).toUtc().toIso8601String(),
           categoryId: _selectedCategoryId!,
           manufacturerId: _selectedManufacturerId,
+          gstPercentage: gstPercentage,
+          reorderLevel: reorderLevel,
+          prescriptionRequired: prescriptionRequired,
+          hsnCode: _hsnCodeController.text.trim().isEmpty ? null : _hsnCodeController.text.trim(),
+          barcode: _barcodeController.text.trim().isEmpty ? null : _barcodeController.text.trim(),
+          supplier: _supplierController.text.trim().isEmpty ? null : _supplierController.text.trim(),
+          notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         );
       }
 
@@ -153,7 +193,7 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: 600,
+        width: 750,
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -190,74 +230,33 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
+                      // Row 1: Medicine Name & Generic Name
                       Row(
                         children: [
                           Expanded(
                             child: _buildField(
-                              label: 'MEDICINE NAME',
-                              hint: 'e.g. Paracetamol 650',
+                              label: 'MEDICINE NAME *',
+                              hint: 'e.g. Amoxicillin 500mg Capsules',
                               controller: _nameController,
-                              validator: (val) => val == null || val.isEmpty ? 'Enter name' : null,
+                              validator: (val) => val == null || val.trim().isEmpty ? 'Enter name' : null,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildField(
-                              label: 'GENERIC NAME',
-                              hint: 'e.g. Paracetamol',
+                              label: 'GENERIC NAME *',
+                              hint: 'e.g. Amoxicillin',
                               controller: _genericNameController,
+                              validator: (val) => val == null || val.trim().isEmpty ? 'Enter generic name' : null,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 20),
+
+                      // Row 2: Manufacturer & Category
                       Row(
                         children: [
-                          // Category Dropdown
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'CATEGORY',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: softGrey),
-                                ),
-                                const SizedBox(height: 8),
-                                DropdownButtonFormField<String>(
-                                  initialValue: _selectedCategoryId,
-                                  hint: const Text('Select category', style: TextStyle(fontSize: 14, color: softGrey)),
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
-                                    ),
-                                  ),
-                                  style: const TextStyle(color: textDark, fontSize: 14),
-                                  items: categories.map((cat) {
-                                    return DropdownMenuItem<String>(
-                                      value: cat.id,
-                                      child: Text(cat.name),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) => setState(() => _selectedCategoryId = val),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Manufacturer Dropdown
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +268,7 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                                 const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
                                   initialValue: _selectedManufacturerId,
-                                  hint: const Text('Select manufacturer', style: TextStyle(fontSize: 14, color: softGrey)),
+                                  hint: const Text('e.g. Cipla Ltd', style: TextStyle(fontSize: 14, color: softGrey)),
                                   isExpanded: true,
                                   decoration: InputDecoration(
                                     filled: true,
@@ -300,117 +299,333 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                               ],
                             ),
                           ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'CATEGORY *',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: softGrey),
+                                ),
+                                const SizedBox(height: 8),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _selectedCategoryId,
+                                  hint: const Text('Select Category', style: TextStyle(fontSize: 14, color: softGrey)),
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
+                                    ),
+                                  ),
+                                  style: const TextStyle(color: textDark, fontSize: 14),
+                                  items: categories.map((cat) {
+                                    return DropdownMenuItem<String>(
+                                      value: cat.id,
+                                      child: Text(cat.name),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) => setState(() => _selectedCategoryId = val),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                      
-                      // Only show batch creation fields when NOT in Edit Mode
-                      if (!isEditMode) ...[
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildField(
-                                label: 'BATCH NUMBER',
-                                hint: 'e.g. B89080379',
-                                controller: _batchNumberController,
-                                validator: (val) => val == null || val.isEmpty ? 'Enter batch number' : null,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'EXPIRY DATE',
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: softGrey),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextFormField(
-                                    controller: _expiryDateController,
-                                    readOnly: true,
-                                    onTap: () => _selectExpiryDate(context),
-                                    style: const TextStyle(color: textDark, fontSize: 14),
-                                    decoration: InputDecoration(
-                                      hintText: 'YYYY-MM-DD',
-                                      hintStyle: const TextStyle(color: softGrey, fontSize: 14),
-                                      prefixIcon: const Icon(Icons.calendar_today_outlined, color: softGrey, size: 16),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: primaryTeal, width: 1.8),
-                                      ),
+                      const SizedBox(height: 20),
+
+                      // Row 3: Schedule & Batch Number
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'SCHEDULE',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: softGrey),
+                                ),
+                                const SizedBox(height: 8),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _selectedSchedule,
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
                                     ),
-                                    validator: (val) => val == null || val.isEmpty ? 'Select expiry date' : null,
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
+                                    ),
                                   ),
-                                ],
-                              ),
+                                  style: const TextStyle(color: textDark, fontSize: 14),
+                                  items: const [
+                                    DropdownMenuItem(value: 'OTC', child: Text('OTC')),
+                                    DropdownMenuItem(value: 'Rx', child: Text('Rx')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => _selectedSchedule = val);
+                                    }
+                                  },
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildField(
-                                label: 'QUANTITY',
-                                hint: 'e.g. 100',
-                                controller: _quantityController,
-                                keyboardType: TextInputType.number,
-                                validator: (val) {
-                                  if (val == null || val.isEmpty) return 'Enter quantity';
-                                  if (int.tryParse(val) == null) return 'Must be an integer';
-                                  return null;
-                                },
-                              ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildField(
+                              label: 'BATCH NUMBER *',
+                              hint: 'e.g. B-20241',
+                              controller: _batchNumberController,
+                              enabled: !isEditMode,
+                              validator: isEditMode 
+                                  ? null 
+                                  : (val) => val == null || val.trim().isEmpty ? 'Enter batch number' : null,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildField(
-                                label: 'PURCHASE PRICE (₹)',
-                                hint: 'e.g. 95.50',
-                                controller: _purchasePriceController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                validator: (val) {
-                                  if (val == null || val.isEmpty) return 'Enter price';
-                                  if (double.tryParse(val) == null) return 'Must be a number';
-                                  return null;
-                                },
-                              ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Row 4: Expiry Date & MRP
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'EXPIRY DATE *',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: softGrey),
+                                ),
+                                const SizedBox(height: 8),
+                                TextFormField(
+                                  controller: _expiryDateController,
+                                  readOnly: true,
+                                  enabled: !isEditMode,
+                                  onTap: isEditMode ? null : () => _selectExpiryDate(context),
+                                  style: TextStyle(color: isEditMode ? softGrey : textDark, fontSize: 14),
+                                  decoration: InputDecoration(
+                                    hintText: 'mm/dd/yyyy',
+                                    hintStyle: const TextStyle(color: softGrey, fontSize: 14),
+                                    prefixIcon: const Icon(Icons.calendar_today_outlined, color: softGrey, size: 16),
+                                    filled: true,
+                                    fillColor: isEditMode ? const Color(0xFFF1F5F9) : Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
+                                    ),
+                                  ),
+                                  validator: isEditMode 
+                                      ? null 
+                                      : (val) => val == null || val.isEmpty ? 'Select expiry date' : null,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildField(
-                                label: 'MRP (₹)',
-                                hint: 'e.g. 144.68',
-                                controller: _mrpController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                validator: (val) {
-                                  if (val == null || val.isEmpty) return 'Enter MRP';
-                                  if (double.tryParse(val) == null) return 'Must be a number';
-                                  return null;
-                                },
-                              ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildField(
+                              label: 'MRP (₹) *',
+                              hint: 'e.g. 144.68',
+                              controller: _mrpController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              enabled: !isEditMode,
+                              validator: isEditMode ? null : (val) {
+                                if (val == null || val.isEmpty) return 'Enter MRP';
+                                final numVal = double.tryParse(val);
+                                if (numVal == null) return 'Must be a number';
+                                if (numVal <= 0) return 'MRP must be greater than 0';
+                                return null;
+                              },
                             ),
-                            const SizedBox(width: 16),
-                            const Spacer(), // Empty space to match the grid
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Row 5: Purchase Cost & Stock Quantity
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildField(
+                              label: 'PURCHASE COST (₹)',
+                              hint: '0.00',
+                              controller: _purchasePriceController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              enabled: !isEditMode,
+                              validator: isEditMode ? null : (val) {
+                                if (val == null || val.isEmpty) return 'Enter purchase cost';
+                                final numVal = double.tryParse(val);
+                                if (numVal == null) return 'Must be a number';
+                                if (numVal < 0) return 'Cannot be negative';
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildField(
+                              label: 'STOCK QUANTITY *',
+                              hint: '0',
+                              controller: _quantityController,
+                              keyboardType: TextInputType.number,
+                              enabled: !isEditMode,
+                              validator: isEditMode ? null : (val) {
+                                if (val == null || val.isEmpty) return 'Enter quantity';
+                                final numVal = int.tryParse(val);
+                                if (numVal == null) return 'Must be an integer';
+                                if (numVal < 0) return 'Cannot be negative';
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Row 6: Reorder Level & GST %
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildField(
+                              label: 'REORDER LEVEL',
+                              hint: '10',
+                              controller: _reorderLevelController,
+                              keyboardType: TextInputType.number,
+                              validator: (val) {
+                                if (val != null && val.isNotEmpty) {
+                                  final numVal = int.tryParse(val);
+                                  if (numVal == null) return 'Must be an integer';
+                                  if (numVal < 0) return 'Cannot be negative';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'GST %',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: softGrey),
+                                ),
+                                const SizedBox(height: 8),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _selectedGst,
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
+                                    ),
+                                  ),
+                                  style: const TextStyle(color: textDark, fontSize: 14),
+                                  items: const [
+                                    DropdownMenuItem(value: '0%', child: Text('0%')),
+                                    DropdownMenuItem(value: '5%', child: Text('5%')),
+                                    DropdownMenuItem(value: '12%', child: Text('12%')),
+                                    DropdownMenuItem(value: '18%', child: Text('18%')),
+                                    DropdownMenuItem(value: '28%', child: Text('28%')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => _selectedGst = val);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Row 7: HSN Code & Barcode / SKU
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildField(
+                              label: 'HSN CODE',
+                              hint: 'e.g. 3004',
+                              controller: _hsnCodeController,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildField(
+                              label: 'BARCODE / SKU',
+                              hint: 'Scan or enter barcode',
+                              controller: _barcodeController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Row 8: Supplier & Notes
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildField(
+                              label: 'SUPPLIER',
+                              hint: 'e.g. Cipla Distributors',
+                              controller: _supplierController,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildField(
+                              label: 'NOTES',
+                              hint: 'Notes',
+                              controller: _notesController,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -465,6 +680,7 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
     required String hint,
     required TextEditingController controller,
     TextInputType? keyboardType,
+    bool enabled = true,
     String? Function(String?)? validator,
   }) {
     const primaryTeal = Color(0xFF0D9488);
@@ -483,18 +699,23 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
-          style: const TextStyle(color: textDark, fontSize: 14),
+          enabled: enabled,
+          style: TextStyle(color: enabled ? textDark : softGrey, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: softGrey, fontSize: 14),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: enabled ? Colors.white : const Color(0xFFF1F5F9),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: borderGrey, width: 1.2),
             ),
             enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: borderGrey, width: 1.2),
+            ),
+            disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: borderGrey, width: 1.2),
             ),

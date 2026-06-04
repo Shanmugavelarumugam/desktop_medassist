@@ -59,6 +59,13 @@ class InventoryNotifier extends Notifier<InventoryState> {
     required String expiryDate,
     required String categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -72,6 +79,13 @@ class InventoryNotifier extends Notifier<InventoryState> {
         expiryDate: expiryDate,
         categoryId: categoryId,
         manufacturerId: manufacturerId,
+        gstPercentage: gstPercentage,
+        reorderLevel: reorderLevel,
+        prescriptionRequired: prescriptionRequired,
+        hsnCode: hsnCode,
+        barcode: barcode,
+        supplier: supplier,
+        notes: notes,
       );
       await loadInventory();
       return true;
@@ -90,6 +104,13 @@ class InventoryNotifier extends Notifier<InventoryState> {
     String? genericName,
     String? categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -99,6 +120,13 @@ class InventoryNotifier extends Notifier<InventoryState> {
         genericName: genericName,
         categoryId: categoryId,
         manufacturerId: manufacturerId,
+        gstPercentage: gstPercentage,
+        reorderLevel: reorderLevel,
+        prescriptionRequired: prescriptionRequired,
+        hsnCode: hsnCode,
+        barcode: barcode,
+        supplier: supplier,
+        notes: notes,
       );
       await loadInventory();
       return true;

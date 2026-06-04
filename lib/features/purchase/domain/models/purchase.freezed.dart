@@ -217,18 +217,18 @@ return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that
 @JsonSerializable()
 
 class _Supplier implements Supplier {
-  const _Supplier({required this.id, required this.tenantId, required this.name, required this.phone, required this.email, required this.gstNumber, required this.address, required this.createdAt, required this.updatedAt});
+  const _Supplier({this.id = '', this.tenantId = '', required this.name, this.phone = '', this.email = '', this.gstNumber = '', this.address = '', this.createdAt = '', this.updatedAt = ''});
   factory _Supplier.fromJson(Map<String, dynamic> json) => _$SupplierFromJson(json);
 
-@override final  String id;
-@override final  String tenantId;
+@override@JsonKey() final  String id;
+@override@JsonKey() final  String tenantId;
 @override final  String name;
-@override final  String phone;
-@override final  String email;
-@override final  String gstNumber;
-@override final  String address;
-@override final  String createdAt;
-@override final  String updatedAt;
+@override@JsonKey() final  String phone;
+@override@JsonKey() final  String email;
+@override@JsonKey() final  String gstNumber;
+@override@JsonKey() final  String address;
+@override@JsonKey() final  String createdAt;
+@override@JsonKey() final  String updatedAt;
 
 /// Create a copy of Supplier
 /// with the given fields replaced by the non-null parameter values.

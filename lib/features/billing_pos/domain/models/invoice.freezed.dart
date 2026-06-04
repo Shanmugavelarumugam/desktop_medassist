@@ -626,7 +626,7 @@ as String?,
 mixin _$MedicineBatch {
 
  String get id; String get medicineId; String get batchNumber; int get quantity; int get availableQuantity; String get expiryDate; String get mrp;// mrp and purchasePrice come back as strings or nums from backend
- String? get purchasePrice;
+ String? get purchasePrice; String? get status;
 /// Create a copy of MedicineBatch
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -639,16 +639,16 @@ $MedicineBatchCopyWith<MedicineBatch> get copyWith => _$MedicineBatchCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MedicineBatch&&(identical(other.id, id) || other.id == id)&&(identical(other.medicineId, medicineId) || other.medicineId == medicineId)&&(identical(other.batchNumber, batchNumber) || other.batchNumber == batchNumber)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.availableQuantity, availableQuantity) || other.availableQuantity == availableQuantity)&&(identical(other.expiryDate, expiryDate) || other.expiryDate == expiryDate)&&(identical(other.mrp, mrp) || other.mrp == mrp)&&(identical(other.purchasePrice, purchasePrice) || other.purchasePrice == purchasePrice));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MedicineBatch&&(identical(other.id, id) || other.id == id)&&(identical(other.medicineId, medicineId) || other.medicineId == medicineId)&&(identical(other.batchNumber, batchNumber) || other.batchNumber == batchNumber)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.availableQuantity, availableQuantity) || other.availableQuantity == availableQuantity)&&(identical(other.expiryDate, expiryDate) || other.expiryDate == expiryDate)&&(identical(other.mrp, mrp) || other.mrp == mrp)&&(identical(other.purchasePrice, purchasePrice) || other.purchasePrice == purchasePrice)&&(identical(other.status, status) || other.status == status));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,medicineId,batchNumber,quantity,availableQuantity,expiryDate,mrp,purchasePrice);
+int get hashCode => Object.hash(runtimeType,id,medicineId,batchNumber,quantity,availableQuantity,expiryDate,mrp,purchasePrice,status);
 
 @override
 String toString() {
-  return 'MedicineBatch(id: $id, medicineId: $medicineId, batchNumber: $batchNumber, quantity: $quantity, availableQuantity: $availableQuantity, expiryDate: $expiryDate, mrp: $mrp, purchasePrice: $purchasePrice)';
+  return 'MedicineBatch(id: $id, medicineId: $medicineId, batchNumber: $batchNumber, quantity: $quantity, availableQuantity: $availableQuantity, expiryDate: $expiryDate, mrp: $mrp, purchasePrice: $purchasePrice, status: $status)';
 }
 
 
@@ -659,7 +659,7 @@ abstract mixin class $MedicineBatchCopyWith<$Res>  {
   factory $MedicineBatchCopyWith(MedicineBatch value, $Res Function(MedicineBatch) _then) = _$MedicineBatchCopyWithImpl;
 @useResult
 $Res call({
- String id, String medicineId, String batchNumber, int quantity, int availableQuantity, String expiryDate, String mrp, String? purchasePrice
+ String id, String medicineId, String batchNumber, int quantity, int availableQuantity, String expiryDate, String mrp, String? purchasePrice, String? status
 });
 
 
@@ -676,7 +676,7 @@ class _$MedicineBatchCopyWithImpl<$Res>
 
 /// Create a copy of MedicineBatch
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? medicineId = null,Object? batchNumber = null,Object? quantity = null,Object? availableQuantity = null,Object? expiryDate = null,Object? mrp = null,Object? purchasePrice = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? medicineId = null,Object? batchNumber = null,Object? quantity = null,Object? availableQuantity = null,Object? expiryDate = null,Object? mrp = null,Object? purchasePrice = freezed,Object? status = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,medicineId: null == medicineId ? _self.medicineId : medicineId // ignore: cast_nullable_to_non_nullable
@@ -686,6 +686,7 @@ as int,availableQuantity: null == availableQuantity ? _self.availableQuantity : 
 as int,expiryDate: null == expiryDate ? _self.expiryDate : expiryDate // ignore: cast_nullable_to_non_nullable
 as String,mrp: null == mrp ? _self.mrp : mrp // ignore: cast_nullable_to_non_nullable
 as String,purchasePrice: freezed == purchasePrice ? _self.purchasePrice : purchasePrice // ignore: cast_nullable_to_non_nullable
+as String?,status: freezed == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -771,10 +772,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  String mrp,  String? purchasePrice)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  String mrp,  String? purchasePrice,  String? status)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MedicineBatch() when $default != null:
-return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice);case _:
+return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice,_that.status);case _:
   return orElse();
 
 }
@@ -792,10 +793,10 @@ return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  String mrp,  String? purchasePrice)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  String mrp,  String? purchasePrice,  String? status)  $default,) {final _that = this;
 switch (_that) {
 case _MedicineBatch():
-return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice);case _:
+return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice,_that.status);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -812,10 +813,10 @@ return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  String mrp,  String? purchasePrice)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  String mrp,  String? purchasePrice,  String? status)?  $default,) {final _that = this;
 switch (_that) {
 case _MedicineBatch() when $default != null:
-return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice);case _:
+return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice,_that.status);case _:
   return null;
 
 }
@@ -827,7 +828,7 @@ return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that
 @JsonSerializable()
 
 class _MedicineBatch implements MedicineBatch {
-  const _MedicineBatch({required this.id, required this.medicineId, required this.batchNumber, required this.quantity, required this.availableQuantity, required this.expiryDate, required this.mrp, this.purchasePrice});
+  const _MedicineBatch({required this.id, required this.medicineId, required this.batchNumber, required this.quantity, required this.availableQuantity, required this.expiryDate, required this.mrp, this.purchasePrice, this.status});
   factory _MedicineBatch.fromJson(Map<String, dynamic> json) => _$MedicineBatchFromJson(json);
 
 @override final  String id;
@@ -839,6 +840,7 @@ class _MedicineBatch implements MedicineBatch {
 @override final  String mrp;
 // mrp and purchasePrice come back as strings or nums from backend
 @override final  String? purchasePrice;
+@override final  String? status;
 
 /// Create a copy of MedicineBatch
 /// with the given fields replaced by the non-null parameter values.
@@ -853,16 +855,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MedicineBatch&&(identical(other.id, id) || other.id == id)&&(identical(other.medicineId, medicineId) || other.medicineId == medicineId)&&(identical(other.batchNumber, batchNumber) || other.batchNumber == batchNumber)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.availableQuantity, availableQuantity) || other.availableQuantity == availableQuantity)&&(identical(other.expiryDate, expiryDate) || other.expiryDate == expiryDate)&&(identical(other.mrp, mrp) || other.mrp == mrp)&&(identical(other.purchasePrice, purchasePrice) || other.purchasePrice == purchasePrice));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MedicineBatch&&(identical(other.id, id) || other.id == id)&&(identical(other.medicineId, medicineId) || other.medicineId == medicineId)&&(identical(other.batchNumber, batchNumber) || other.batchNumber == batchNumber)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.availableQuantity, availableQuantity) || other.availableQuantity == availableQuantity)&&(identical(other.expiryDate, expiryDate) || other.expiryDate == expiryDate)&&(identical(other.mrp, mrp) || other.mrp == mrp)&&(identical(other.purchasePrice, purchasePrice) || other.purchasePrice == purchasePrice)&&(identical(other.status, status) || other.status == status));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,medicineId,batchNumber,quantity,availableQuantity,expiryDate,mrp,purchasePrice);
+int get hashCode => Object.hash(runtimeType,id,medicineId,batchNumber,quantity,availableQuantity,expiryDate,mrp,purchasePrice,status);
 
 @override
 String toString() {
-  return 'MedicineBatch(id: $id, medicineId: $medicineId, batchNumber: $batchNumber, quantity: $quantity, availableQuantity: $availableQuantity, expiryDate: $expiryDate, mrp: $mrp, purchasePrice: $purchasePrice)';
+  return 'MedicineBatch(id: $id, medicineId: $medicineId, batchNumber: $batchNumber, quantity: $quantity, availableQuantity: $availableQuantity, expiryDate: $expiryDate, mrp: $mrp, purchasePrice: $purchasePrice, status: $status)';
 }
 
 
@@ -873,7 +875,7 @@ abstract mixin class _$MedicineBatchCopyWith<$Res> implements $MedicineBatchCopy
   factory _$MedicineBatchCopyWith(_MedicineBatch value, $Res Function(_MedicineBatch) _then) = __$MedicineBatchCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String medicineId, String batchNumber, int quantity, int availableQuantity, String expiryDate, String mrp, String? purchasePrice
+ String id, String medicineId, String batchNumber, int quantity, int availableQuantity, String expiryDate, String mrp, String? purchasePrice, String? status
 });
 
 
@@ -890,7 +892,7 @@ class __$MedicineBatchCopyWithImpl<$Res>
 
 /// Create a copy of MedicineBatch
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? medicineId = null,Object? batchNumber = null,Object? quantity = null,Object? availableQuantity = null,Object? expiryDate = null,Object? mrp = null,Object? purchasePrice = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? medicineId = null,Object? batchNumber = null,Object? quantity = null,Object? availableQuantity = null,Object? expiryDate = null,Object? mrp = null,Object? purchasePrice = freezed,Object? status = freezed,}) {
   return _then(_MedicineBatch(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,medicineId: null == medicineId ? _self.medicineId : medicineId // ignore: cast_nullable_to_non_nullable
@@ -900,6 +902,7 @@ as int,availableQuantity: null == availableQuantity ? _self.availableQuantity : 
 as int,expiryDate: null == expiryDate ? _self.expiryDate : expiryDate // ignore: cast_nullable_to_non_nullable
 as String,mrp: null == mrp ? _self.mrp : mrp // ignore: cast_nullable_to_non_nullable
 as String,purchasePrice: freezed == purchasePrice ? _self.purchasePrice : purchasePrice // ignore: cast_nullable_to_non_nullable
+as String?,status: freezed == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

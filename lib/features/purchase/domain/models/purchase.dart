@@ -6,15 +6,15 @@ part 'purchase.g.dart';
 @freezed
 abstract class Supplier with _$Supplier {
   const factory Supplier({
-    required String id,
-    required String tenantId,
+    @Default('') String id,
+    @Default('') String tenantId,
     required String name,
-    required String phone,
-    required String email,
-    required String gstNumber,
-    required String address,
-    required String createdAt,
-    required String updatedAt,
+    @Default('') String phone,
+    @Default('') String email,
+    @Default('') String gstNumber,
+    @Default('') String address,
+    @Default('') String createdAt,
+    @Default('') String updatedAt,
   }) = _Supplier;
 
   factory Supplier.fromJson(Map<String, dynamic> json) => _$SupplierFromJson(json);

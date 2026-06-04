@@ -34,6 +34,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
     required String expiryDate,
     required String categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   }) {
     return _remoteDataSource.createMedicine(
       name: name,
@@ -45,6 +52,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
       expiryDate: expiryDate,
       categoryId: categoryId,
       manufacturerId: manufacturerId,
+      gstPercentage: gstPercentage,
+      reorderLevel: reorderLevel,
+      prescriptionRequired: prescriptionRequired,
+      hsnCode: hsnCode,
+      barcode: barcode,
+      supplier: supplier,
+      notes: notes,
     );
   }
 
@@ -55,6 +69,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
     String? genericName,
     String? categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   }) {
     return _remoteDataSource.updateMedicine(
       id: id,
@@ -62,6 +83,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
       genericName: genericName,
       categoryId: categoryId,
       manufacturerId: manufacturerId,
+      gstPercentage: gstPercentage,
+      reorderLevel: reorderLevel,
+      prescriptionRequired: prescriptionRequired,
+      hsnCode: hsnCode,
+      barcode: barcode,
+      supplier: supplier,
+      notes: notes,
     );
   }
 

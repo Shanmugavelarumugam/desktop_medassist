@@ -9,6 +9,10 @@ import 'package:desktop_medassist/features/purchase/presentation/screens/purchas
 import 'package:desktop_medassist/features/purchase/presentation/notifier/purchase_notifier.dart';
 import 'package:desktop_medassist/features/import/presentation/screens/import_screen.dart';
 import 'package:desktop_medassist/features/sales/presentation/screens/sales_screen.dart';
+import 'package:desktop_medassist/features/expiry_batch/presentation/screens/expiry_batch_screen.dart';
+import 'package:desktop_medassist/features/expiry_batch/presentation/notifier/expiry_batch_notifier.dart';
+import 'package:desktop_medassist/features/barcode/presentation/screens/barcode_screen.dart';
+import 'package:desktop_medassist/features/barcode/presentation/notifier/barcode_notifier.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -22,13 +26,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(purchaseNotifierProvider, (previous, next) {
-      if ((_activeRoute == 'Purchases' || _activeRoute == 'Suppliers') && previous?.activeTab != next.activeTab) {
-        setState(() {
-          _activeRoute = next.activeTab == 1 ? 'Suppliers' : 'Purchases';
-        });
-      }
-    });
+
 
     final authState = ref.watch(authControllerProvider);
     final user = authState.user;
@@ -435,7 +433,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   ? const ImportScreen()
                                   : _activeRoute == 'Sales'
                                       ? const SalesScreen()
-                                      : SingleChildScrollView(
+                                      : _activeRoute == 'Expiry & Batch'
+                                          ? const ExpiryBatchScreen()
+                                          : _activeRoute == 'Barcode & QR'
+                                              ? const BarcodeScreen()
+                                              : SingleChildScrollView(
                                   padding: const EdgeInsets.all(32.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -553,8 +555,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               });
               if (label == 'Suppliers') {
                 ref.read(purchaseNotifierProvider.notifier).setActiveTab(1);
+                ref.read(purchaseNotifierProvider.notifier).loadSuppliers();
               } else if (label == 'Purchases') {
                 ref.read(purchaseNotifierProvider.notifier).setActiveTab(0);
+                ref.read(purchaseNotifierProvider.notifier).loadPurchaseOrders();
+              } else if (label == 'Expiry & Batch') {
+                ref.read(expiryBatchNotifierProvider.notifier).loadBatches();
+              } else if (label == 'Barcode & QR') {
+                ref.read(barcodeNotifierProvider.notifier).clearLookup();
+                ref.read(barcodeNotifierProvider.notifier).clearGenerated();
               }
             },
       child: Container(

@@ -17,6 +17,7 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
   }
 
   Future<void> loadData() async {
+    if (state.isLoading) return;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final orders = await _repository.getPurchaseOrders();
@@ -35,6 +36,7 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
   }
 
   Future<void> loadPurchaseOrders() async {
+    if (state.isLoading) return;
     try {
       final orders = await _repository.getPurchaseOrders();
       state = state.copyWith(purchaseOrders: orders);
@@ -46,6 +48,7 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
   }
 
   Future<void> loadSuppliers() async {
+    if (state.isLoading) return;
     try {
       final suppliers = await _repository.getSuppliers();
       state = state.copyWith(suppliers: suppliers);
@@ -86,7 +89,11 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
         totalAmount: totalAmount,
         notes: notes,
       );
-      await loadPurchaseOrders();
+      final orders = await _repository.getPurchaseOrders();
+      state = state.copyWith(
+        purchaseOrders: orders,
+        isLoading: false,
+      );
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -101,7 +108,11 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       await _repository.updatePurchaseOrderStatus(id: id, status: status);
-      await loadPurchaseOrders();
+      final orders = await _repository.getPurchaseOrders();
+      state = state.copyWith(
+        purchaseOrders: orders,
+        isLoading: false,
+      );
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -116,7 +127,11 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       await _repository.approvePurchaseOrder(id: id);
-      await loadPurchaseOrders();
+      final orders = await _repository.getPurchaseOrders();
+      state = state.copyWith(
+        purchaseOrders: orders,
+        isLoading: false,
+      );
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -140,8 +155,12 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
         receivedItems: receivedItems,
         notes: notes,
       );
-      // 2. Refresh orders list
-      await loadPurchaseOrders();
+      // 2. Refresh orders list directly
+      final orders = await _repository.getPurchaseOrders();
+      state = state.copyWith(
+        purchaseOrders: orders,
+        isLoading: false,
+      );
       // 3. IMPORTANT: Automatically reload active stock to show newly added batches and counts!
       await ref.read(inventoryNotifierProvider.notifier).loadInventory();
       return true;
@@ -150,7 +169,11 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
       // so the user sees the purchase order completed, and we inform them.
       try {
         await _repository.updatePurchaseOrderStatus(id: id, status: 'RECEIVED');
-        await loadPurchaseOrders();
+        final orders = await _repository.getPurchaseOrders();
+        state = state.copyWith(
+          purchaseOrders: orders,
+          isLoading: false,
+        );
         await ref.read(inventoryNotifierProvider.notifier).loadInventory();
         return true;
       } catch (_) {}
@@ -179,7 +202,11 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
         gstNumber: gstNumber,
         address: address,
       );
-      await loadSuppliers();
+      final suppliers = await _repository.getSuppliers();
+      state = state.copyWith(
+        suppliers: suppliers,
+        isLoading: false,
+      );
       return true;
     } catch (e) {
       state = state.copyWith(

@@ -24,6 +24,11 @@ class _PurchasesScreenState extends ConsumerState<PurchasesScreen> {
     _searchController.addListener(() {
       ref.read(purchaseNotifierProvider.notifier).setSearchQuery(_searchController.text);
     });
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(purchaseNotifierProvider.notifier).loadData();
+      }
+    });
   }
 
   @override
@@ -129,7 +134,7 @@ class _PurchasesScreenState extends ConsumerState<PurchasesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. HEADER WITH TABS
+          // 1. DYNAMIC HEADER
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
             decoration: const BoxDecoration(
@@ -145,9 +150,9 @@ class _PurchasesScreenState extends ConsumerState<PurchasesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Purchases & Procurement',
-                          style: TextStyle(
+                        Text(
+                          activeTab == 0 ? 'Purchases & Procurement' : 'Supplier Directory',
+                          style: const TextStyle(
                             color: textDark,
                             fontSize: 32,
                             fontWeight: FontWeight.w800,
@@ -174,30 +179,6 @@ class _PurchasesScreenState extends ConsumerState<PurchasesScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                
-                // Tab switcher
-                Row(
-                  children: [
-                    _buildTabButton(
-                      label: 'Purchase Orders',
-                      isActive: activeTab == 0,
-                      onTap: () {
-                        _searchController.clear();
-                        ref.read(purchaseNotifierProvider.notifier).setActiveTab(0);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    _buildTabButton(
-                      label: 'Suppliers',
-                      isActive: activeTab == 1,
-                      onTap: () {
-                        _searchController.clear();
-                        ref.read(purchaseNotifierProvider.notifier).setActiveTab(1);
-                      },
                     ),
                   ],
                 ),
@@ -326,29 +307,7 @@ class _PurchasesScreenState extends ConsumerState<PurchasesScreen> {
     );
   }
 
-  Widget _buildTabButton({required String label, required bool isActive, required VoidCallback onTap}) {
-    const primaryTeal = Color(0xFF0F766E);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0FDF4) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isActive ? const Color(0xFFBBF7D0) : Colors.transparent),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? primaryTeal : const Color(0xFF64748B),
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildErrorState(String message) {
     return Padding(
@@ -648,16 +607,42 @@ class _PurchasesScreenState extends ConsumerState<PurchasesScreen> {
             final confirm = await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
-                title: const Text('Cancel Purchase Order'),
-                content: Text('Are you sure you want to cancel order ${po.orderNumber}?'),
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: const Text(
+                  'Cancel Purchase Order',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                content: Text(
+                  'Are you sure you want to cancel order ${po.orderNumber}?',
+                  style: const TextStyle(
+                    color: Color(0xFF475569),
+                    fontSize: 15,
+                  ),
+                ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('No'),
+                    child: const Text(
+                      'No',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('Cancel Order', style: TextStyle(color: Colors.red)),
+                    child: const Text(
+                      'Cancel Order',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),

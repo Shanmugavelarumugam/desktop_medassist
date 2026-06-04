@@ -7,15 +7,15 @@ part of 'purchase.dart';
 // **************************************************************************
 
 _Supplier _$SupplierFromJson(Map<String, dynamic> json) => _Supplier(
-  id: json['id'] as String,
-  tenantId: json['tenantId'] as String,
+  id: json['id'] as String? ?? '',
+  tenantId: json['tenantId'] as String? ?? '',
   name: json['name'] as String,
-  phone: json['phone'] as String,
-  email: json['email'] as String,
-  gstNumber: json['gstNumber'] as String,
-  address: json['address'] as String,
-  createdAt: json['createdAt'] as String,
-  updatedAt: json['updatedAt'] as String,
+  phone: json['phone'] as String? ?? '',
+  email: json['email'] as String? ?? '',
+  gstNumber: json['gstNumber'] as String? ?? '',
+  address: json['address'] as String? ?? '',
+  createdAt: json['createdAt'] as String? ?? '',
+  updatedAt: json['updatedAt'] as String? ?? '',
 );
 
 Map<String, dynamic> _$SupplierToJson(_Supplier instance) => <String, dynamic>{

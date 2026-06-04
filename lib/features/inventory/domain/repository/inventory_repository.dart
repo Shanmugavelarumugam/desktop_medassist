@@ -15,6 +15,13 @@ abstract class InventoryRepository {
     required String expiryDate,
     required String categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   });
 
   Future<Medicine> updateMedicine({
@@ -23,6 +30,13 @@ abstract class InventoryRepository {
     String? genericName,
     String? categoryId,
     String? manufacturerId,
+    double? gstPercentage,
+    int? reorderLevel,
+    bool? prescriptionRequired,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   });
 
   Future<void> deleteMedicine({required String id});

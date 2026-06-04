@@ -125,9 +125,11 @@ class BillingNotifier extends Notifier<BillingState> {
           'medicineId': item.medicine.id,
           'batchId': item.batchId,
           'quantity': item.quantity,
+          'qty': item.quantity,
           'price': itemSubtotal,
           'mrp': item.mrp,
           'gst': itemGst,
+          'gstAmount': itemGst,
           'total': itemTotal,
         };
       }).toList();

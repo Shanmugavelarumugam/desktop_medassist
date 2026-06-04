@@ -47,7 +47,18 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Select Batch for ${medicine.name}'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
+          'Select Batch for ${medicine.name}',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Color(0xFF0F172A),
+          ),
+        ),
         content: FutureBuilder<List<MedicineBatch>>(
           future: ref
               .read(billingNotifierProvider.notifier)
@@ -77,7 +88,22 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
               );
             }
 
-            final batches = snapshot.data!;
+            final batches = snapshot.data!
+                .where((b) => b.medicineId == medicine.id)
+                .toList();
+
+            if (batches.isEmpty) {
+              return const SizedBox(
+                height: 100,
+                child: Center(
+                  child: Text(
+                    'No active batches found for this medicine.',
+                    style: TextStyle(color: Color(0xFF64748B)),
+                  ),
+                ),
+              );
+            }
+
             return SizedBox(
               width: 400,
               child: ListView.separated(
@@ -111,6 +137,7 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
+                            color: Color(0xFF0F172A),
                           ),
                         ),
                         Text(
@@ -188,7 +215,10 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
                           ),
                           Text(
                             'Stock: ${batch.availableQuantity}',
-                            style: const TextStyle(fontSize: 12),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
                           ),
                         ],
                       ),
@@ -219,7 +249,10 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text(
               'Cancel',
-              style: TextStyle(color: Color(0xFF64748B)),
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -601,16 +634,20 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
                                                 itemDaysToExpiry <= 30;
                                             return Row(
                                               children: [
-                                                Text(
-                                                  'Batch: ${item.batchNumber}  |  Exp: ${DateFormat('MMM yyyy').format(itemExpiryDate)}',
-                                                  style: TextStyle(
-                                                    color: itemIsNearExpiry
-                                                        ? Colors.orange
-                                                        : softGrey,
-                                                    fontSize: 12,
-                                                    fontWeight: itemIsNearExpiry
-                                                        ? FontWeight.bold
-                                                        : FontWeight.normal,
+                                                Flexible(
+                                                  child: Text(
+                                                    'Batch: ${item.batchNumber}  |  Exp: ${DateFormat('MMM yyyy').format(itemExpiryDate)}',
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      color: itemIsNearExpiry
+                                                          ? Colors.orange
+                                                          : softGrey,
+                                                      fontSize: 12,
+                                                      fontWeight: itemIsNearExpiry
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                    ),
                                                   ),
                                                 ),
                                                 if (itemIsNearExpiry) ...[

@@ -12,6 +12,7 @@ class App extends ConsumerWidget {
     return MaterialApp.router(
       title: 'MedAssist Desktop',
       debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

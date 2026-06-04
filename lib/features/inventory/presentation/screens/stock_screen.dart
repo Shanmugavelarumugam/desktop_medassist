@@ -103,8 +103,15 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Medicine', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Delete Medicine',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+          ),
+        ),
         content: Text(
           'Are you sure you want to delete ${medicine.name}? This action cannot be undone.',
           style: const TextStyle(color: Color(0xFF475569), fontSize: 15),
@@ -112,7 +119,13 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {

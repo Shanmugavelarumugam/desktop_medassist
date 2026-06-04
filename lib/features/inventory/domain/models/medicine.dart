@@ -64,6 +64,10 @@ abstract class Medicine with _$Medicine {
     String? expiryDate,
     @Default(0.0) double mrp,
     @Default(0.0) double purchasePrice,
+    String? hsnCode,
+    String? barcode,
+    String? supplier,
+    String? notes,
   }) = _Medicine;
 
   factory Medicine.fromJson(Map<String, dynamic> json) =>

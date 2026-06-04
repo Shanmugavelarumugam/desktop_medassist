@@ -86,6 +86,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
             children: const [
@@ -108,6 +109,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: reasonController,
+                style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
                 decoration: InputDecoration(
                   labelText: 'Cancellation Reason *',
                   labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
@@ -499,20 +501,28 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                value,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 12),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
