@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/repository/billing_repository.dart';
@@ -23,9 +24,14 @@ class BillingNotifier extends Notifier<BillingState> {
   Future<void> loadInvoices() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
+      debugPrint('===== API CALL: GET INVOICES =====');
       final invoices = await _repository.getInvoices();
+      debugPrint('===== API SUCCESS: GET INVOICES =====');
+      debugPrint('Loaded ${invoices.length} invoices');
       state = state.copyWith(invoices: invoices, isLoading: false);
     } catch (e) {
+      debugPrint('===== API ERROR: GET INVOICES =====');
+      debugPrint(e.toString());
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceFirst('Exception: ', ''),
@@ -42,6 +48,20 @@ class BillingNotifier extends Notifier<BillingState> {
     required int availableStock,
     required String expiryDate,
   }) {
+    // ignore: avoid_print
+    print('========================');
+    // ignore: avoid_print
+    print('ADDING TO CART');
+    // ignore: avoid_print
+    print('Medicine: ${medicine.name}');
+    // ignore: avoid_print
+    print('Medicine MRP: ${medicine.mrp}');
+    // ignore: avoid_print
+    print('Incoming MRP Parameter: $mrp');
+    // ignore: avoid_print
+    print('========================');
+
+    debugPrint('${medicine.name} | Qty=$quantity | Price=$mrp');
     final existingIndex = state.cartItems.indexWhere((item) => item.batchId == batchId);
     
     if (existingIndex >= 0) {
@@ -67,6 +87,14 @@ class BillingNotifier extends Notifier<BillingState> {
         availableStock: availableStock,
         expiryDate: expiryDate,
       );
+
+      // ignore: avoid_print
+      print('CART ITEM CREATED');
+      // ignore: avoid_print
+      print('MRP: ${newItem.mrp}');
+      // ignore: avoid_print
+      print('Qty: ${newItem.quantity}');
+
       state = state.copyWith(cartItems: [...state.cartItems, newItem]);
     }
   }
@@ -116,23 +144,49 @@ class BillingNotifier extends Notifier<BillingState> {
     state = state.copyWith(isLoading: true, errorMessage: null, lastCreatedInvoice: null);
     try {
       final itemsPayload = state.cartItems.map((item) {
-        final itemTotal = item.mrp * item.quantity;
+        final unitTotal = item.mrp;
         final gstRate = (item.medicine.gstPercentage ?? 12.0) / 100.0;
-        final itemSubtotal = itemTotal / (1.0 + gstRate);
-        final itemGst = itemTotal - itemSubtotal;
+        final unitSubtotal = unitTotal / (1.0 + gstRate);
+        final unitGst = unitTotal - unitSubtotal;
         
         return {
           'medicineId': item.medicine.id,
           'batchId': item.batchId,
           'quantity': item.quantity,
           'qty': item.quantity,
-          'price': itemSubtotal,
+          'price': unitSubtotal,
+          'unitPrice': unitSubtotal,
           'mrp': item.mrp,
-          'gst': itemGst,
-          'gstAmount': itemGst,
-          'total': itemTotal,
+          'gst': unitGst,
+          'gstAmount': unitGst,
+          'total': unitTotal,
+          'totalPrice': unitTotal,
         };
       }).toList();
+
+      for (final item in state.cartItems) {
+        final itemTotal = item.mrp * item.quantity;
+        final gstRate = (item.medicine.gstPercentage ?? 12.0) / 100.0;
+        final itemSubtotal = itemTotal / (1.0 + gstRate);
+        debugPrint(
+          'MED=${item.medicine.name} '
+          'QTY=${item.quantity} '
+          'PRICE=$itemSubtotal '
+          'MRP=${item.mrp} '
+          'TOTAL=$itemTotal'
+        );
+      }
+
+      final payload = {
+        'subtotal': state.cartSubtotal,
+        'discount': state.discount,
+        'gst': state.cartGst,
+        'total': state.cartTotal,
+        'items': itemsPayload,
+      };
+
+      debugPrint('===== INVOICE PAYLOAD =====');
+      debugPrint(jsonEncode(payload));
 
       final invoice = await _repository.createInvoice(
         items: itemsPayload,
@@ -143,6 +197,13 @@ class BillingNotifier extends Notifier<BillingState> {
         paymentMethod: state.paymentMethod,
         notes: notes.trim(),
       );
+
+      debugPrint('===== API SUCCESS RESPONSE =====');
+      debugPrint('Invoice ID: ${invoice.id}');
+      debugPrint('Invoice Number: ${invoice.invoiceNumber}');
+      debugPrint('Response Subtotal: ${invoice.subtotal}');
+      debugPrint('Response GST: ${invoice.gst}');
+      debugPrint('Response Total: ${invoice.total}');
 
       // Refresh inventory stock amounts so the main screen updates instantly!
       ref.read(inventoryNotifierProvider.notifier).loadInventory();
@@ -159,6 +220,8 @@ class BillingNotifier extends Notifier<BillingState> {
       );
       return true;
     } catch (e) {
+      debugPrint('===== API ERROR =====');
+      debugPrint(e.toString());
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceFirst('Exception: ', ''),
@@ -169,30 +232,42 @@ class BillingNotifier extends Notifier<BillingState> {
 
   Future<List<MedicineBatch>> fetchBatches(String medicineId) async {
     try {
-      return await _repository.getBatches(medicineId);
+      debugPrint('===== API CALL: GET BATCHES (medId: $medicineId) =====');
+      final batches = await _repository.getBatches(medicineId);
+      debugPrint('===== API SUCCESS: GET BATCHES =====');
+      debugPrint('Loaded ${batches.length} batches');
+      return batches;
     } catch (e) {
-      debugPrint("Error fetching batches in BillingNotifier: $e");
+      debugPrint('===== API ERROR: GET BATCHES =====');
+      debugPrint(e.toString());
       return [];
     }
   }
 
   Future<void> loadAnalytics() async {
     try {
+      debugPrint('===== API CALL: GET ANALYTICS =====');
       final summary = await _repository.getDailySummary();
       final breakdown = await _repository.getPaymentBreakdown();
+      debugPrint('===== API SUCCESS: GET ANALYTICS =====');
+      debugPrint('Daily Summary: $summary');
+      debugPrint('Payment Breakdown: $breakdown');
       state = state.copyWith(
         dailySummary: summary,
         paymentBreakdown: breakdown,
       );
     } catch (e) {
-      debugPrint("Error loading analytics: $e");
+      debugPrint('===== API ERROR: GET ANALYTICS =====');
+      debugPrint(e.toString());
     }
   }
 
   Future<bool> cancelInvoice(String id, String reason) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
+      debugPrint('===== API CALL: CANCEL INVOICE (id: $id, reason: $reason) =====');
       await _repository.cancelInvoice(id: id, reason: reason);
+      debugPrint('===== API SUCCESS: CANCEL INVOICE =====');
       
       // Refresh inventory stock amounts so the main screen updates instantly!
       ref.read(inventoryNotifierProvider.notifier).loadInventory();
@@ -203,6 +278,8 @@ class BillingNotifier extends Notifier<BillingState> {
       
       return true;
     } catch (e) {
+      debugPrint('===== API ERROR: CANCEL INVOICE =====');
+      debugPrint(e.toString());
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceFirst('Exception: ', ''),
@@ -218,7 +295,13 @@ final billingNotifierProvider = NotifierProvider<BillingNotifier, BillingState>(
 // Extension to expose local cart calculations
 extension CartCalculations on BillingState {
   double get cartSubtotal {
-    return cartItems.fold(0.0, (sum, item) => sum + (item.mrp * item.quantity));
+    // Calculate true pre-tax subtotal (sum of item base prices)
+    return cartItems.fold(0.0, (sum, item) {
+      final itemTotal = item.mrp * item.quantity;
+      final gstRate = (item.medicine.gstPercentage ?? 12.0) / 100.0;
+      final itemSubtotal = itemTotal / (1.0 + gstRate);
+      return sum + itemSubtotal;
+    });
   }
 
   double get cartGst {
@@ -234,8 +317,10 @@ extension CartCalculations on BillingState {
   }
 
   double get cartTotal {
+    // Grand total = base subtotal + gst - discount
     final sub = cartSubtotal;
-    final tot = sub - discount;
+    final gst = cartGst;
+    final tot = sub + gst - discount;
     return tot < 0 ? 0.0 : tot;
   }
 }

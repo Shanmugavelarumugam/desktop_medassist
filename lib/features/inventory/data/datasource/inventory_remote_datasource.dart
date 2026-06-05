@@ -83,6 +83,14 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
           }
         }).toList();
         developer.log("MAPPED MEDICINES SUCCESSFULLY.");
+
+        for (final med in medicines) {
+          // ignore: avoid_print
+          print(
+            'MEDICINE => ${med.name} | MRP=${med.mrp} | Purchase=${med.purchasePrice} | Batch=${med.batchNumber}',
+          );
+        }
+
         return medicines;
       }
       throw Exception(response.data?['message'] ?? 'Failed to load medicines');

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../billing_pos/presentation/notifier/billing_notifier.dart';
 import '../../../billing_pos/domain/models/invoice.dart';
+import '../../../dashboard/presentation/screens/dashboard_screen.dart';
 
 class SalesScreen extends ConsumerStatefulWidget {
   const SalesScreen({super.key});
@@ -238,13 +239,40 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, color: primaryTeal),
-                  tooltip: 'Reload Sales History',
-                  onPressed: () {
-                    ref.read(billingNotifierProvider.notifier).loadInvoices();
-                    ref.read(billingNotifierProvider.notifier).loadAnalytics();
-                  },
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryTeal,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        ref.read(activeRouteProvider.notifier).changeRoute('Billing / POS');
+                      },
+                      icon: const Icon(Icons.add, size: 20),
+                      label: const Text(
+                        'New Bill',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton(
+                      icon: const Icon(Icons.refresh, color: primaryTeal),
+                      tooltip: 'Reload Sales History',
+                      onPressed: () {
+                        ref.read(billingNotifierProvider.notifier).loadInvoices();
+                        ref.read(billingNotifierProvider.notifier).loadAnalytics();
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

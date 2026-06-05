@@ -85,9 +85,11 @@ _MedicineBatch _$MedicineBatchFromJson(Map<String, dynamic> json) =>
       quantity: (json['quantity'] as num).toInt(),
       availableQuantity: (json['availableQuantity'] as num).toInt(),
       expiryDate: json['expiryDate'] as String,
-      mrp: json['mrp'] as String,
-      purchasePrice: json['purchasePrice'] as String?,
+      mrp: json['mrp'],
+      purchasePrice: json['purchasePrice'],
       status: json['status'] as String?,
+      medicineName: json['medicineName'] as String?,
+      medicine: json['medicine'] as Map<String, dynamic>?,
     );
 
 Map<String, dynamic> _$MedicineBatchToJson(_MedicineBatch instance) =>
@@ -101,4 +103,6 @@ Map<String, dynamic> _$MedicineBatchToJson(_MedicineBatch instance) =>
       'mrp': instance.mrp,
       'purchasePrice': instance.purchasePrice,
       'status': instance.status,
+      'medicineName': instance.medicineName,
+      'medicine': instance.medicine,
     };

@@ -5,6 +5,7 @@ import '../../../inventory/presentation/notifier/inventory_notifier.dart';
 import '../../../inventory/domain/models/medicine.dart';
 import '../notifier/billing_notifier.dart';
 import '../../domain/models/invoice.dart';
+import '../../utils/invoice_printer.dart';
 
 class BillingPosScreen extends ConsumerStatefulWidget {
   const BillingPosScreen({super.key});
@@ -122,7 +123,16 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
                   final formattedExpiry = DateFormat(
                     'MMM yyyy',
                   ).format(expiryDate);
-                  final batchMrp = double.tryParse(batch.mrp) ?? 0.0;
+
+                  debugPrint('====================');
+                  debugPrint('Medicine: ${medicine.name}');
+                  debugPrint('Batch No: ${batch.batchNumber}');
+                  debugPrint('Raw MRP: ${batch.mrp}');
+                  debugPrint('Raw Purchase Price: ${batch.purchasePrice}');
+                  debugPrint('Parsed MRP: ${double.tryParse(batch.mrp.toString())}');
+                  debugPrint('====================');
+
+                  final batchMrp = double.tryParse(batch.mrp.toString()) ?? 0.0;
 
                   return ListTile(
                     contentPadding: const EdgeInsets.symmetric(
@@ -267,184 +277,247 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
       builder: (context) {
         const primaryTeal = Color(0xFF0F766E);
         const textDark = Color(0xFF0F172A);
-        const borderGrey = Color(0xFFE2E8F0);
         const softGrey = Color(0xFF64748B);
+
+        final cgst = invoice.gst / 2;
+        final sgst = invoice.gst / 2;
 
         return Dialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Container(
-            width: 450,
+            width: 600,
             padding: const EdgeInsets.all(40),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE6F4EA),
-                    shape: BoxShape.circle,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Receipt Header
+                  const Text(
+                    'VIYAN MEDASSIST',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      letterSpacing: 1.2,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Color(0xFF10B981),
-                    size: 64,
+                  const SizedBox(height: 8),
+                  const Text(
+                    '123, Healthcare Street, Medical Hub, Bangalore',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: Colors.black87),
                   ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Transaction Successful',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: textDark,
-                    letterSpacing: -0.5,
+                  const SizedBox(height: 4),
+                  const Text(
+                    'GSTIN: 29ABCDE1234F1Z1 | Ph: +91 98765 43210',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: Colors.black87),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Invoice ${invoice.invoiceNumber} has been finalized.',
-                  style: const TextStyle(color: softGrey, fontSize: 15, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 32),
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: borderGrey, width: 1.5),
-                  ),
-                  child: Column(
+                  const SizedBox(height: 32),
+
+                  // Invoice Info
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildReceiptRow('PAYMENT METHOD', invoice.paymentMethod),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Divider(height: 1, color: borderGrey, thickness: 1.5),
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(fontSize: 14, color: Colors.black),
+                          children: [
+                            const TextSpan(text: 'INVOICE # ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(text: invoice.invoiceNumber),
+                          ],
+                        ),
                       ),
-                      _buildReceiptRow(
-                        'SUBTOTAL',
-                        '₹${invoice.subtotal.toStringAsFixed(2)}',
-                      ),
-                      const SizedBox(height: 12),
-                      _buildReceiptRow(
-                        'DISCOUNT',
-                        '₹${invoice.discount.toStringAsFixed(2)}',
-                      ),
-                      const SizedBox(height: 12),
-                      _buildReceiptRow(
-                        'TAX/GST (INCL.)',
-                        '₹${invoice.gst.toStringAsFixed(2)}',
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Divider(height: 1, color: borderGrey, thickness: 1.5),
-                      ),
-                      _buildReceiptRow(
-                        'TOTAL AMOUNT',
-                        '₹${invoice.total.toStringAsFixed(2)}',
-                        isBold: true,
-                        valueColor: primaryTeal,
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(fontSize: 14, color: Colors.black),
+                          children: [
+                            const TextSpan(text: 'DATE: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(text: invoice.date),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 40),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Printing receipt...'),
-                              backgroundColor: primaryTeal,
-                              behavior: SnackBarBehavior.floating,
+                  const SizedBox(height: 16),
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(fontSize: 14, color: Colors.black),
+                      children: [
+                        const TextSpan(text: 'PATIENT: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                        TextSpan(text: invoice.patientName.isNotEmpty ? invoice.patientName : 'Walk-in Customer'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(fontSize: 14, color: Colors.black),
+                      children: [
+                        const TextSpan(text: 'PHONE: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                        TextSpan(text: invoice.patientPhone.isNotEmpty ? invoice.patientPhone : ''),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(color: Colors.black, thickness: 1.5),
+
+                  // Table Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      children: const [
+                        Expanded(flex: 4, child: Text('Medicine', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
+                        Expanded(flex: 1, child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
+                        Expanded(flex: 2, child: Text('MRP', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
+                        Expanded(flex: 2, child: Text('Total', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
+                      ],
+                    ),
+                  ),
+                  const Divider(color: Colors.black, thickness: 1.5),
+
+                  // Items
+                  ...invoice.items.map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(flex: 4, child: Text(item.name, style: const TextStyle(fontSize: 14))),
+                          Expanded(flex: 1, child: Text(item.qty.toString(), textAlign: TextAlign.center, style: const TextStyle(fontSize: 14))),
+                          Expanded(flex: 2, child: Text('₹${item.mrp.toStringAsFixed(2)}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 14))),
+                          Expanded(flex: 2, child: Text('₹${item.total.toStringAsFixed(2)}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 14))),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+
+                  const SizedBox(height: 24),
+
+                  // Summary
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 250,
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Subtotal', style: TextStyle(fontSize: 14)),
+                                Text('₹${invoice.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14)),
+                              ],
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.print_outlined, size: 20),
-                        label: const Text(
-                          'Print Receipt',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                          ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('CGST', style: TextStyle(fontSize: 14)),
+                                Text('₹${cgst.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14)),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('SGST', style: TextStyle(fontSize: 14)),
+                                Text('₹${sgst.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Divider(color: Colors.black, thickness: 1),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('TOTAL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text('₹${invoice.total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              ],
+                            ),
+                          ],
                         ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: textDark,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  const Divider(color: Colors.black, thickness: 1),
+                  const SizedBox(height: 24),
+
+                  // Footer
+                  const Text(
+                    'Thank you for visiting! Get well soon.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: Colors.black87),
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            InvoicePrinter.printInvoice(invoice);
+                          },
+                          icon: const Icon(Icons.print_outlined, size: 20),
+                          label: const Text(
+                            'Print Receipt',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: textDark,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          ref
-                              .read(billingNotifierProvider.notifier)
-                              .clearCart();
-                          _discountController.text = '0';
-                          _notesController.clear();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryTeal,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            ref
+                                .read(billingNotifierProvider.notifier)
+                                .clearCart();
+                            _discountController.text = '0';
+                            _notesController.clear();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryTeal,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                            shadowColor: primaryTeal.withValues(alpha: 0.4),
                           ),
-                          elevation: 2,
-                          shadowColor: primaryTeal.withValues(alpha: 0.4),
-                        ),
-                        child: const Text(
-                          'Close POS',
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          child: const Text(
+                            'Close POS',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildReceiptRow(
-    String label,
-    String value, {
-    bool isBold = false,
-    Color? valueColor,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            color: const Color(0xFF64748B),
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isBold ? 15 : 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: valueColor ?? const Color(0xFF1E293B),
-          ),
-        ),
-      ],
     );
   }
 
@@ -1038,6 +1111,7 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
                       ],
                     ),
                     child: TextField(
+                      autofocus: true,
                       controller: _searchController,
                       style: const TextStyle(color: textDark, fontSize: 14),
                       decoration: InputDecoration(
@@ -1091,6 +1165,7 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen> {
                             ),
                           )
                         : GridView.builder(
+                            physics: const BouncingScrollPhysics(),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,

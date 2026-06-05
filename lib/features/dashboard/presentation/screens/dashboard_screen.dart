@@ -14,6 +14,19 @@ import 'package:desktop_medassist/features/expiry_batch/presentation/notifier/ex
 import 'package:desktop_medassist/features/barcode/presentation/screens/barcode_screen.dart';
 import 'package:desktop_medassist/features/barcode/presentation/notifier/barcode_notifier.dart';
 
+class ActiveRouteNotifier extends Notifier<String> {
+  @override
+  String build() => 'Dashboard';
+
+  void changeRoute(String route) {
+    state = route;
+  }
+}
+
+final activeRouteProvider = NotifierProvider<ActiveRouteNotifier, String>(() {
+  return ActiveRouteNotifier();
+});
+
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
@@ -22,7 +35,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  String _activeRoute = 'Dashboard'; // Track active sidebar route
+  String get _activeRoute => ref.watch(activeRouteProvider);
 
   @override
   Widget build(BuildContext context) {
@@ -550,9 +563,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       onTap: isStatic
           ? onTap
           : () {
-              setState(() {
-                _activeRoute = label;
-              });
+              ref.read(activeRouteProvider.notifier).changeRoute(label);
               if (label == 'Suppliers') {
                 ref.read(purchaseNotifierProvider.notifier).setActiveTab(1);
                 ref.read(purchaseNotifierProvider.notifier).loadSuppliers();

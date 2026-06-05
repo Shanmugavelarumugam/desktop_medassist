@@ -102,8 +102,9 @@ class AuthNotifier extends Notifier<AuthState> {
     _dio = Dio(
       BaseOptions(
         baseUrl: _baseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json'},
       ),
     );
@@ -132,6 +133,19 @@ class AuthNotifier extends Notifier<AuthState> {
       }
     } catch (e) {
       state = AuthState(isAuthenticated: false, isLoading: false);
+    }
+  }
+
+  // Helper helper to format Dio errors nicely
+  String _formatDioError(DioException e) {
+    if (e.type == DioExceptionType.receiveTimeout || 
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.connectionTimeout) {
+      return 'Server is starting or taking too long to respond. Please try again in a few seconds.';
+    } else if (e.type == DioExceptionType.connectionError) {
+      return 'No internet connection.';
+    } else {
+      return e.response?.data?['error']?['message'] ?? 'Network or Server Error';
     }
   }
 
@@ -171,8 +185,7 @@ class AuthNotifier extends Notifier<AuthState> {
         return false;
       }
     } on DioException catch (e) {
-      final errorMsg =
-          e.response?.data?['error']?['message'] ?? 'Network or Server Error';
+      final errorMsg = _formatDioError(e);
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);
       return false;
     } catch (e) {
@@ -181,18 +194,34 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<Response> _attemptLogin(String email, String password) async {
+    return await _dio.post(
+      '/login',
+      data: {
+        'email': email.trim().toLowerCase(),
+        'password': password.trim(),
+        'deviceName': 'Desktop App',
+      },
+    );
+  }
+
   // Login Method
   Future<bool> login({required String email, required String password}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final response = await _dio.post(
-        '/login',
-        data: {
-          'email': email.trim().toLowerCase(),
-          'password': password.trim(),
-          'deviceName': 'Desktop App',
-        },
-      );
+      late Response response;
+      try {
+        response = await _attemptLogin(email, password);
+      } on DioException catch (e) {
+        if (e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout) {
+          // Retry once on timeout
+          response = await _attemptLogin(email, password);
+        } else {
+          rethrow;
+        }
+      }
 
       if (response.data != null && response.data['success'] == true) {
         final data = response.data['data'];
@@ -222,9 +251,7 @@ class AuthNotifier extends Notifier<AuthState> {
         return false;
       }
     } on DioException catch (e) {
-      final errorMsg =
-          e.response?.data?['error']?['message'] ??
-          'Invalid credentials or Network error';
+      final errorMsg = _formatDioError(e);
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);
       return false;
     } catch (e) {

@@ -625,8 +625,8 @@ as String?,
 /// @nodoc
 mixin _$MedicineBatch {
 
- String get id; String get medicineId; String get batchNumber; int get quantity; int get availableQuantity; String get expiryDate; String get mrp;// mrp and purchasePrice come back as strings or nums from backend
- String? get purchasePrice; String? get status;
+ String get id; String get medicineId; String get batchNumber; int get quantity; int get availableQuantity; String get expiryDate; dynamic get mrp;// mrp and purchasePrice come back as strings or nums from backend
+ dynamic get purchasePrice; String? get status; String? get medicineName; Map<String, dynamic>? get medicine;
 /// Create a copy of MedicineBatch
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -639,16 +639,16 @@ $MedicineBatchCopyWith<MedicineBatch> get copyWith => _$MedicineBatchCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MedicineBatch&&(identical(other.id, id) || other.id == id)&&(identical(other.medicineId, medicineId) || other.medicineId == medicineId)&&(identical(other.batchNumber, batchNumber) || other.batchNumber == batchNumber)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.availableQuantity, availableQuantity) || other.availableQuantity == availableQuantity)&&(identical(other.expiryDate, expiryDate) || other.expiryDate == expiryDate)&&(identical(other.mrp, mrp) || other.mrp == mrp)&&(identical(other.purchasePrice, purchasePrice) || other.purchasePrice == purchasePrice)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MedicineBatch&&(identical(other.id, id) || other.id == id)&&(identical(other.medicineId, medicineId) || other.medicineId == medicineId)&&(identical(other.batchNumber, batchNumber) || other.batchNumber == batchNumber)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.availableQuantity, availableQuantity) || other.availableQuantity == availableQuantity)&&(identical(other.expiryDate, expiryDate) || other.expiryDate == expiryDate)&&const DeepCollectionEquality().equals(other.mrp, mrp)&&const DeepCollectionEquality().equals(other.purchasePrice, purchasePrice)&&(identical(other.status, status) || other.status == status)&&(identical(other.medicineName, medicineName) || other.medicineName == medicineName)&&const DeepCollectionEquality().equals(other.medicine, medicine));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,medicineId,batchNumber,quantity,availableQuantity,expiryDate,mrp,purchasePrice,status);
+int get hashCode => Object.hash(runtimeType,id,medicineId,batchNumber,quantity,availableQuantity,expiryDate,const DeepCollectionEquality().hash(mrp),const DeepCollectionEquality().hash(purchasePrice),status,medicineName,const DeepCollectionEquality().hash(medicine));
 
 @override
 String toString() {
-  return 'MedicineBatch(id: $id, medicineId: $medicineId, batchNumber: $batchNumber, quantity: $quantity, availableQuantity: $availableQuantity, expiryDate: $expiryDate, mrp: $mrp, purchasePrice: $purchasePrice, status: $status)';
+  return 'MedicineBatch(id: $id, medicineId: $medicineId, batchNumber: $batchNumber, quantity: $quantity, availableQuantity: $availableQuantity, expiryDate: $expiryDate, mrp: $mrp, purchasePrice: $purchasePrice, status: $status, medicineName: $medicineName, medicine: $medicine)';
 }
 
 
@@ -659,7 +659,7 @@ abstract mixin class $MedicineBatchCopyWith<$Res>  {
   factory $MedicineBatchCopyWith(MedicineBatch value, $Res Function(MedicineBatch) _then) = _$MedicineBatchCopyWithImpl;
 @useResult
 $Res call({
- String id, String medicineId, String batchNumber, int quantity, int availableQuantity, String expiryDate, String mrp, String? purchasePrice, String? status
+ String id, String medicineId, String batchNumber, int quantity, int availableQuantity, String expiryDate, dynamic mrp, dynamic purchasePrice, String? status, String? medicineName, Map<String, dynamic>? medicine
 });
 
 
@@ -676,7 +676,7 @@ class _$MedicineBatchCopyWithImpl<$Res>
 
 /// Create a copy of MedicineBatch
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? medicineId = null,Object? batchNumber = null,Object? quantity = null,Object? availableQuantity = null,Object? expiryDate = null,Object? mrp = null,Object? purchasePrice = freezed,Object? status = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? medicineId = null,Object? batchNumber = null,Object? quantity = null,Object? availableQuantity = null,Object? expiryDate = null,Object? mrp = freezed,Object? purchasePrice = freezed,Object? status = freezed,Object? medicineName = freezed,Object? medicine = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,medicineId: null == medicineId ? _self.medicineId : medicineId // ignore: cast_nullable_to_non_nullable
@@ -684,10 +684,12 @@ as String,batchNumber: null == batchNumber ? _self.batchNumber : batchNumber // 
 as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
 as int,availableQuantity: null == availableQuantity ? _self.availableQuantity : availableQuantity // ignore: cast_nullable_to_non_nullable
 as int,expiryDate: null == expiryDate ? _self.expiryDate : expiryDate // ignore: cast_nullable_to_non_nullable
-as String,mrp: null == mrp ? _self.mrp : mrp // ignore: cast_nullable_to_non_nullable
-as String,purchasePrice: freezed == purchasePrice ? _self.purchasePrice : purchasePrice // ignore: cast_nullable_to_non_nullable
-as String?,status: freezed == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String?,
+as String,mrp: freezed == mrp ? _self.mrp : mrp // ignore: cast_nullable_to_non_nullable
+as dynamic,purchasePrice: freezed == purchasePrice ? _self.purchasePrice : purchasePrice // ignore: cast_nullable_to_non_nullable
+as dynamic,status: freezed == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String?,medicineName: freezed == medicineName ? _self.medicineName : medicineName // ignore: cast_nullable_to_non_nullable
+as String?,medicine: freezed == medicine ? _self.medicine : medicine // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,
   ));
 }
 
@@ -772,10 +774,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  String mrp,  String? purchasePrice,  String? status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  dynamic mrp,  dynamic purchasePrice,  String? status,  String? medicineName,  Map<String, dynamic>? medicine)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MedicineBatch() when $default != null:
-return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice,_that.status);case _:
+return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice,_that.status,_that.medicineName,_that.medicine);case _:
   return orElse();
 
 }
@@ -793,10 +795,10 @@ return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  String mrp,  String? purchasePrice,  String? status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  dynamic mrp,  dynamic purchasePrice,  String? status,  String? medicineName,  Map<String, dynamic>? medicine)  $default,) {final _that = this;
 switch (_that) {
 case _MedicineBatch():
-return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice,_that.status);case _:
+return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice,_that.status,_that.medicineName,_that.medicine);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -813,10 +815,10 @@ return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  String mrp,  String? purchasePrice,  String? status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String medicineId,  String batchNumber,  int quantity,  int availableQuantity,  String expiryDate,  dynamic mrp,  dynamic purchasePrice,  String? status,  String? medicineName,  Map<String, dynamic>? medicine)?  $default,) {final _that = this;
 switch (_that) {
 case _MedicineBatch() when $default != null:
-return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice,_that.status);case _:
+return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that.availableQuantity,_that.expiryDate,_that.mrp,_that.purchasePrice,_that.status,_that.medicineName,_that.medicine);case _:
   return null;
 
 }
@@ -828,7 +830,7 @@ return $default(_that.id,_that.medicineId,_that.batchNumber,_that.quantity,_that
 @JsonSerializable()
 
 class _MedicineBatch implements MedicineBatch {
-  const _MedicineBatch({required this.id, required this.medicineId, required this.batchNumber, required this.quantity, required this.availableQuantity, required this.expiryDate, required this.mrp, this.purchasePrice, this.status});
+  const _MedicineBatch({required this.id, required this.medicineId, required this.batchNumber, required this.quantity, required this.availableQuantity, required this.expiryDate, required this.mrp, this.purchasePrice, this.status, this.medicineName, final  Map<String, dynamic>? medicine}): _medicine = medicine;
   factory _MedicineBatch.fromJson(Map<String, dynamic> json) => _$MedicineBatchFromJson(json);
 
 @override final  String id;
@@ -837,10 +839,20 @@ class _MedicineBatch implements MedicineBatch {
 @override final  int quantity;
 @override final  int availableQuantity;
 @override final  String expiryDate;
-@override final  String mrp;
+@override final  dynamic mrp;
 // mrp and purchasePrice come back as strings or nums from backend
-@override final  String? purchasePrice;
+@override final  dynamic purchasePrice;
 @override final  String? status;
+@override final  String? medicineName;
+ final  Map<String, dynamic>? _medicine;
+@override Map<String, dynamic>? get medicine {
+  final value = _medicine;
+  if (value == null) return null;
+  if (_medicine is EqualUnmodifiableMapView) return _medicine;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(value);
+}
+
 
 /// Create a copy of MedicineBatch
 /// with the given fields replaced by the non-null parameter values.
@@ -855,16 +867,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MedicineBatch&&(identical(other.id, id) || other.id == id)&&(identical(other.medicineId, medicineId) || other.medicineId == medicineId)&&(identical(other.batchNumber, batchNumber) || other.batchNumber == batchNumber)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.availableQuantity, availableQuantity) || other.availableQuantity == availableQuantity)&&(identical(other.expiryDate, expiryDate) || other.expiryDate == expiryDate)&&(identical(other.mrp, mrp) || other.mrp == mrp)&&(identical(other.purchasePrice, purchasePrice) || other.purchasePrice == purchasePrice)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MedicineBatch&&(identical(other.id, id) || other.id == id)&&(identical(other.medicineId, medicineId) || other.medicineId == medicineId)&&(identical(other.batchNumber, batchNumber) || other.batchNumber == batchNumber)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.availableQuantity, availableQuantity) || other.availableQuantity == availableQuantity)&&(identical(other.expiryDate, expiryDate) || other.expiryDate == expiryDate)&&const DeepCollectionEquality().equals(other.mrp, mrp)&&const DeepCollectionEquality().equals(other.purchasePrice, purchasePrice)&&(identical(other.status, status) || other.status == status)&&(identical(other.medicineName, medicineName) || other.medicineName == medicineName)&&const DeepCollectionEquality().equals(other._medicine, _medicine));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,medicineId,batchNumber,quantity,availableQuantity,expiryDate,mrp,purchasePrice,status);
+int get hashCode => Object.hash(runtimeType,id,medicineId,batchNumber,quantity,availableQuantity,expiryDate,const DeepCollectionEquality().hash(mrp),const DeepCollectionEquality().hash(purchasePrice),status,medicineName,const DeepCollectionEquality().hash(_medicine));
 
 @override
 String toString() {
-  return 'MedicineBatch(id: $id, medicineId: $medicineId, batchNumber: $batchNumber, quantity: $quantity, availableQuantity: $availableQuantity, expiryDate: $expiryDate, mrp: $mrp, purchasePrice: $purchasePrice, status: $status)';
+  return 'MedicineBatch(id: $id, medicineId: $medicineId, batchNumber: $batchNumber, quantity: $quantity, availableQuantity: $availableQuantity, expiryDate: $expiryDate, mrp: $mrp, purchasePrice: $purchasePrice, status: $status, medicineName: $medicineName, medicine: $medicine)';
 }
 
 
@@ -875,7 +887,7 @@ abstract mixin class _$MedicineBatchCopyWith<$Res> implements $MedicineBatchCopy
   factory _$MedicineBatchCopyWith(_MedicineBatch value, $Res Function(_MedicineBatch) _then) = __$MedicineBatchCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String medicineId, String batchNumber, int quantity, int availableQuantity, String expiryDate, String mrp, String? purchasePrice, String? status
+ String id, String medicineId, String batchNumber, int quantity, int availableQuantity, String expiryDate, dynamic mrp, dynamic purchasePrice, String? status, String? medicineName, Map<String, dynamic>? medicine
 });
 
 
@@ -892,7 +904,7 @@ class __$MedicineBatchCopyWithImpl<$Res>
 
 /// Create a copy of MedicineBatch
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? medicineId = null,Object? batchNumber = null,Object? quantity = null,Object? availableQuantity = null,Object? expiryDate = null,Object? mrp = null,Object? purchasePrice = freezed,Object? status = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? medicineId = null,Object? batchNumber = null,Object? quantity = null,Object? availableQuantity = null,Object? expiryDate = null,Object? mrp = freezed,Object? purchasePrice = freezed,Object? status = freezed,Object? medicineName = freezed,Object? medicine = freezed,}) {
   return _then(_MedicineBatch(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,medicineId: null == medicineId ? _self.medicineId : medicineId // ignore: cast_nullable_to_non_nullable
@@ -900,10 +912,12 @@ as String,batchNumber: null == batchNumber ? _self.batchNumber : batchNumber // 
 as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
 as int,availableQuantity: null == availableQuantity ? _self.availableQuantity : availableQuantity // ignore: cast_nullable_to_non_nullable
 as int,expiryDate: null == expiryDate ? _self.expiryDate : expiryDate // ignore: cast_nullable_to_non_nullable
-as String,mrp: null == mrp ? _self.mrp : mrp // ignore: cast_nullable_to_non_nullable
-as String,purchasePrice: freezed == purchasePrice ? _self.purchasePrice : purchasePrice // ignore: cast_nullable_to_non_nullable
-as String?,status: freezed == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String?,
+as String,mrp: freezed == mrp ? _self.mrp : mrp // ignore: cast_nullable_to_non_nullable
+as dynamic,purchasePrice: freezed == purchasePrice ? _self.purchasePrice : purchasePrice // ignore: cast_nullable_to_non_nullable
+as dynamic,status: freezed == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String?,medicineName: freezed == medicineName ? _self.medicineName : medicineName // ignore: cast_nullable_to_non_nullable
+as String?,medicine: freezed == medicine ? _self._medicine : medicine // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,
   ));
 }
 

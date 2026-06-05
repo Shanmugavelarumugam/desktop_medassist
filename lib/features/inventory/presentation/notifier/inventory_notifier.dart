@@ -233,18 +233,14 @@ extension InventoryStats on InventoryState {
   int get outOfStockCount => medicines.where((m) => m.stock == 0).length;
 
   int get lowStockCount {
-    final now = DateTime.now();
     return medicines.where((m) {
-      final isExpired = m.expiryDate != null && m.expiryDate!.isNotEmpty && DateTime.parse(m.expiryDate!).isBefore(now);
-      return m.stock > 0 && m.stock <= (m.reorderLevel ?? 10) && !isExpired;
+      return m.stock > 0 && m.stock <= (m.reorderLevel ?? 10);
     }).length;
   }
 
   int get inStockCount {
-    final now = DateTime.now();
     return medicines.where((m) {
-      final isExpired = m.expiryDate != null && m.expiryDate!.isNotEmpty && DateTime.parse(m.expiryDate!).isBefore(now);
-      return m.stock > (m.reorderLevel ?? 10) && !isExpired;
+      return m.stock > (m.reorderLevel ?? 10);
     }).length;
   }
 
@@ -254,6 +250,6 @@ extension InventoryStats on InventoryState {
   }
 
   double get inventoryValue {
-    return medicines.fold(0.0, (sum, m) => sum + (m.stock * m.mrp));
+    return medicines.fold(0.0, (sum, m) => sum + (m.stock * m.purchasePrice));
   }
 }

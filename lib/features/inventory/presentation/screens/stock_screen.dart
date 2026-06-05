@@ -299,7 +299,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                       Expanded(
                         child: _buildStatCard(
                           'Inventory Value',
-                          '₹${NumberFormat('#,##,###').format(state.inventoryValue)}',
+                          '₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 2).format(state.inventoryValue).trim()}',
                           Icons.currency_rupee,
                           primaryTeal,
                         ),
@@ -450,12 +450,20 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                                   // Medicine Info
                                                   Expanded(
                                                     flex: 3,
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                    child: Row(
                                                       children: [
-                                                        Text(med.name, style: const TextStyle(fontWeight: FontWeight.w700, color: textDark, fontSize: 15)),
-                                                        const SizedBox(height: 4),
-                                                        Text(med.genericName ?? 'No Generic', style: TextStyle(color: softGrey.withValues(alpha: 0.8), fontSize: 12)),
+                                                        _buildAvatar(med.name),
+                                                        const SizedBox(width: 12),
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Text(med.name, style: const TextStyle(fontWeight: FontWeight.w700, color: textDark, fontSize: 15)),
+                                                              const SizedBox(height: 4),
+                                                              Text(med.genericName ?? 'No Generic', style: TextStyle(color: softGrey.withValues(alpha: 0.8), fontSize: 12)),
+                                                            ],
+                                                          ),
+                                                        ),
                                                       ],
                                                     ),
                                                   ),
@@ -543,17 +551,15 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                                       children: [
 
                                                         _ActionButton(
-                                                          icon: Icons.edit_rounded,
-                                                          color: const Color(0xFF3B82F6),
-                                                          tooltip: 'Edit',
-                                                          onPressed: () => _showEditMedicineDialog(med),
+                                                          icon: Icons.remove_red_eye_outlined,
+                                                          tooltip: 'View',
+                                                          onPressed: () {},
                                                         ),
                                                         const SizedBox(width: 8),
                                                         _ActionButton(
-                                                          icon: Icons.delete_rounded,
-                                                          color: const Color(0xFFEF4444),
-                                                          tooltip: 'Delete',
-                                                          onPressed: () => _confirmDeleteMedicine(med),
+                                                          icon: Icons.edit_outlined,
+                                                          tooltip: 'Edit',
+                                                          onPressed: () => _showEditMedicineDialog(med),
                                                         ),
                                                       ],
                                                     ),
@@ -654,6 +660,37 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         text,
         style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5),
         textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String name) {
+    String initials = '';
+    final parts = name.split(RegExp(r'\s+'));
+    if (parts.isNotEmpty) {
+      initials += parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '';
+      if (parts.length > 1) {
+        initials += parts[1].isNotEmpty ? parts[1][0].toUpperCase() : '';
+      }
+    }
+    if (initials.isEmpty) initials = '?';
+
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: Color(0xFF0D9488),
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }
@@ -770,13 +807,11 @@ class _TableHeaderText extends StatelessWidget {
 
 class _ActionButton extends StatelessWidget {
   final IconData icon;
-  final Color color;
   final String tooltip;
   final VoidCallback onPressed;
 
   const _ActionButton({
     required this.icon,
-    required this.color,
     required this.tooltip,
     required this.onPressed,
   });
@@ -788,12 +823,16 @@ class _ActionButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           onTap: onPressed,
-          hoverColor: color.withValues(alpha: 0.1),
+          hoverColor: const Color(0xFFF1F5F9),
           child: Container(
-            padding: const EdgeInsets.all(8),
-            child: Icon(icon, size: 18, color: color),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, size: 16, color: const Color(0xFF64748B)),
           ),
         ),
       ),

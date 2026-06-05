@@ -136,8 +136,11 @@ class _ExpiryBatchScreenState extends ConsumerState<ExpiryBatchScreen> {
     // ── Filter ───────────────────────────────────────────────────────────────
     final filtered = state.batches.where((b) {
       final med     = medMap[b.medicineId];
-      final medName = med?.name.toLowerCase() ?? '';
-      final genName = med?.genericName?.toLowerCase() ?? '';
+      final backendMedName = (b.medicineName ?? b.medicine?['name'] as String?)?.toLowerCase();
+      final backendGenName = (b.medicine?['genericName'] as String?)?.toLowerCase();
+      
+      final medName = backendMedName ?? med?.name.toLowerCase() ?? '';
+      final genName = backendGenName ?? med?.genericName?.toLowerCase() ?? '';
       final batchNo = b.batchNumber.toLowerCase();
       final query   = state.searchQuery.toLowerCase();
 
@@ -427,7 +430,7 @@ class _ExpiryBatchScreenState extends ConsumerState<ExpiryBatchScreen> {
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      med?.name ?? 'Unknown Medicine',
+                                                      batch.medicineName ?? (batch.medicine?['name'] as String?) ?? med?.name ?? 'Unknown Medicine',
                                                       style: const TextStyle(
                                                         fontWeight: FontWeight.w700,
                                                         color: _textDark,
@@ -436,7 +439,7 @@ class _ExpiryBatchScreenState extends ConsumerState<ExpiryBatchScreen> {
                                                     ),
                                                     const SizedBox(height: 3),
                                                     Text(
-                                                      med?.genericName ?? '—',
+                                                      (batch.medicine?['genericName'] as String?) ?? med?.genericName ?? '—',
                                                       style: TextStyle(
                                                         color: _softGrey.withValues(alpha: 0.8),
                                                         fontSize: 11,
