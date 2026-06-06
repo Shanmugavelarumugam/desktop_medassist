@@ -49,8 +49,6 @@ class BillingNotifier extends Notifier<BillingState> {
     required String expiryDate,
   }) {
     // ignore: avoid_print
-    print('========================');
-    // ignore: avoid_print
     print('ADDING TO CART');
     // ignore: avoid_print
     print('Medicine: ${medicine.name}');
@@ -58,20 +56,20 @@ class BillingNotifier extends Notifier<BillingState> {
     print('Medicine MRP: ${medicine.mrp}');
     // ignore: avoid_print
     print('Incoming MRP Parameter: $mrp');
-    // ignore: avoid_print
-    print('========================');
 
     debugPrint('${medicine.name} | Qty=$quantity | Price=$mrp');
-    final existingIndex = state.cartItems.indexWhere((item) => item.batchId == batchId);
-    
+    final existingIndex = state.cartItems.indexWhere(
+      (item) => item.batchId == batchId,
+    );
+
     if (existingIndex >= 0) {
       // Item already in cart, increment quantity
       final existing = state.cartItems[existingIndex];
       final newQty = existing.quantity + quantity;
-      
+
       // Limit to available stock
       final finalQty = newQty > availableStock ? availableStock : newQty;
-      
+
       final updatedList = List<CartItem>.from(state.cartItems);
       updatedList[existingIndex] = existing.copyWith(quantity: finalQty);
       state = state.copyWith(cartItems: updatedList);
@@ -101,7 +99,9 @@ class BillingNotifier extends Notifier<BillingState> {
 
   void removeFromCart(String batchId) {
     state = state.copyWith(
-      cartItems: state.cartItems.where((item) => item.batchId != batchId).toList(),
+      cartItems: state.cartItems
+          .where((item) => item.batchId != batchId)
+          .toList(),
     );
   }
 
@@ -109,7 +109,9 @@ class BillingNotifier extends Notifier<BillingState> {
     state = state.copyWith(
       cartItems: state.cartItems.map((item) {
         if (item.batchId == batchId) {
-          final finalQty = quantity > item.availableStock ? item.availableStock : (quantity < 1 ? 1 : quantity);
+          final finalQty = quantity > item.availableStock
+              ? item.availableStock
+              : (quantity < 1 ? 1 : quantity);
           return item.copyWith(quantity: finalQty);
         }
         return item;
@@ -141,14 +143,18 @@ class BillingNotifier extends Notifier<BillingState> {
       return false;
     }
 
-    state = state.copyWith(isLoading: true, errorMessage: null, lastCreatedInvoice: null);
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      lastCreatedInvoice: null,
+    );
     try {
       final itemsPayload = state.cartItems.map((item) {
         final unitTotal = item.mrp;
         final gstRate = (item.medicine.gstPercentage ?? 12.0) / 100.0;
         final unitSubtotal = unitTotal / (1.0 + gstRate);
         final unitGst = unitTotal - unitSubtotal;
-        
+
         return {
           'medicineId': item.medicine.id,
           'batchId': item.batchId,
@@ -173,7 +179,7 @@ class BillingNotifier extends Notifier<BillingState> {
           'QTY=${item.quantity} '
           'PRICE=$itemSubtotal '
           'MRP=${item.mrp} '
-          'TOTAL=$itemTotal'
+          'TOTAL=$itemTotal',
         );
       }
 
@@ -207,7 +213,7 @@ class BillingNotifier extends Notifier<BillingState> {
 
       // Refresh inventory stock amounts so the main screen updates instantly!
       ref.read(inventoryNotifierProvider.notifier).loadInventory();
-      
+
       // Reload billing list and analytics
       await loadInvoices();
       await loadAnalytics();
@@ -265,17 +271,19 @@ class BillingNotifier extends Notifier<BillingState> {
   Future<bool> cancelInvoice(String id, String reason) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      debugPrint('===== API CALL: CANCEL INVOICE (id: $id, reason: $reason) =====');
+      debugPrint(
+        '===== API CALL: CANCEL INVOICE (id: $id, reason: $reason) =====',
+      );
       await _repository.cancelInvoice(id: id, reason: reason);
       debugPrint('===== API SUCCESS: CANCEL INVOICE =====');
-      
+
       // Refresh inventory stock amounts so the main screen updates instantly!
       ref.read(inventoryNotifierProvider.notifier).loadInventory();
-      
+
       // Reload invoices and analytics
       await loadInvoices();
       await loadAnalytics();
-      
+
       return true;
     } catch (e) {
       debugPrint('===== API ERROR: CANCEL INVOICE =====');
@@ -290,7 +298,22 @@ class BillingNotifier extends Notifier<BillingState> {
 }
 
 // Global Injectable BillingNotifier Provider
-final billingNotifierProvider = NotifierProvider<BillingNotifier, BillingState>(BillingNotifier.new);
+final billingNotifierProvider = NotifierProvider<BillingNotifier, BillingState>(
+  BillingNotifier.new,
+);
+
+class ActiveTemplateNotifier extends Notifier<String> {
+  @override
+  String build() => 'classic';
+
+  void setTemplate(String templateId) {
+    state = templateId;
+  }
+}
+
+final activeTemplateProvider = NotifierProvider<ActiveTemplateNotifier, String>(
+  ActiveTemplateNotifier.new,
+);
 
 // Extension to expose local cart calculations
 extension CartCalculations on BillingState {

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../billing_pos/presentation/notifier/billing_notifier.dart';
 import '../../../billing_pos/domain/models/invoice.dart';
-import '../../../dashboard/presentation/screens/dashboard_screen.dart';
+import '../../../billing_pos/presentation/widgets/invoice_template_selector_dialog.dart';
+import '../../../billing_pos/presentation/widgets/invoice_builder_dialog.dart';
+
 
 class SalesScreen extends ConsumerStatefulWidget {
   const SalesScreen({super.key});
@@ -252,7 +254,11 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                         elevation: 0,
                       ),
                       onPressed: () {
-                        ref.read(activeRouteProvider.notifier).changeRoute('Billing / POS');
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const InvoiceBuilderDialog(),
+                        );
                       },
                       icon: const Icon(Icons.add, size: 20),
                       label: const Text(
@@ -263,7 +269,34 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: primaryTeal,
+                        side: const BorderSide(color: primaryTeal, width: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: true,
+                          builder: (context) => const InvoiceTemplateSelectorDialog(),
+                        );
+                      },
+                      icon: const Icon(Icons.style_rounded, size: 20),
+                      label: const Text(
+                        'Template',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(Icons.refresh, color: primaryTeal),
                       tooltip: 'Reload Sales History',
