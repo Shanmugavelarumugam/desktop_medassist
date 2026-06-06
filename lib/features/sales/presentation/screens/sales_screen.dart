@@ -243,6 +243,32 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                 ),
                 Row(
                   children: [
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: primaryTeal,
+                        side: const BorderSide(color: primaryTeal, width: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: true,
+                          builder: (context) => const InvoiceTemplateSelectorDialog(),
+                        );
+                      },
+                      child: const Text(
+                        'Template',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryTeal,
@@ -268,42 +294,6 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: primaryTeal,
-                        side: const BorderSide(color: primaryTeal, width: 1.5),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: true,
-                          builder: (context) => const InvoiceTemplateSelectorDialog(),
-                        );
-                      },
-                      icon: const Icon(Icons.style_rounded, size: 20),
-                      label: const Text(
-                        'Template',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.refresh, color: primaryTeal),
-                      tooltip: 'Reload Sales History',
-                      onPressed: () {
-                        ref.read(billingNotifierProvider.notifier).loadInvoices();
-                        ref.read(billingNotifierProvider.notifier).loadAnalytics();
-                      },
                     ),
                   ],
                 ),

@@ -66,9 +66,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     try {
       final date = DateTime.parse(expiryString);
       final now = DateTime.now();
-      // Near expiry if within 90 days and not yet expired
+      // Near expiry if within 180 days (6 months) and not yet expired
       return date.isAfter(now) &&
-          date.isBefore(now.add(const Duration(days: 90)));
+          date.isBefore(now.add(const Duration(days: 180)));
     } catch (_) {
       return false;
     }
@@ -286,22 +286,71 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   // 2. MODERN STATS CARDS
                   Row(
                     children: [
-                      Expanded(child: _buildStatCard('Total SKU', state.totalSKU.toString(), Icons.layers_outlined, const Color(0xFF3B82F6))),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildStatCard('In Stock', state.inStockCount.toString(), Icons.check_circle_outline, const Color(0xFF10B981))),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildStatCard('Low Stock', state.lowStockCount.toString(), Icons.warning_amber_rounded, const Color(0xFFF59E0B))),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildStatCard('Out of Stock', state.outOfStockCount.toString(), Icons.cancel_outlined, const Color(0xFFEF4444))),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildStatCard('Expired', state.expiredCount.toString(), Icons.calendar_today_outlined, const Color(0xFF9F1239))),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            ref.read(inventoryNotifierProvider.notifier).setStatus('All Status');
+                            setState(() => _currentPage = 1);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: _buildStatCard('Total SKU', state.totalSKU.toString(), Icons.layers_outlined, const Color(0xFF3B82F6)),
+                        ),
+                      ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _buildStatCard(
-                          'Inventory Value',
-                          '₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 2).format(state.inventoryValue).trim()}',
-                          Icons.currency_rupee,
-                          primaryTeal,
+                        child: InkWell(
+                          onTap: () {
+                            ref.read(inventoryNotifierProvider.notifier).setStatus('In Stock');
+                            setState(() => _currentPage = 1);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: _buildStatCard('In Stock', state.inStockCount.toString(), Icons.check_circle_outline, const Color(0xFF10B981)),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            ref.read(inventoryNotifierProvider.notifier).setStatus('Low Stock');
+                            setState(() => _currentPage = 1);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: _buildStatCard('Low Stock', state.lowStockCount.toString(), Icons.warning_amber_rounded, const Color(0xFFF59E0B)),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            ref.read(inventoryNotifierProvider.notifier).setStatus('Out of Stock');
+                            setState(() => _currentPage = 1);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: _buildStatCard('Out of Stock', state.outOfStockCount.toString(), Icons.cancel_outlined, const Color(0xFFEF4444)),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            ref.read(inventoryNotifierProvider.notifier).setStatus('Expired');
+                            setState(() => _currentPage = 1);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: _buildStatCard('Expired', state.expiredCount.toString(), Icons.calendar_today_outlined, const Color(0xFF9F1239)),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {},
+                          borderRadius: BorderRadius.circular(16),
+                          child: _buildStatCard(
+                            'Inventory Value',
+                            _formatLargeCurrency(state.inventoryValue),
+                            Icons.currency_rupee,
+                            primaryTeal,
+                          ),
                         ),
                       ),
                     ],
@@ -331,7 +380,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                             controller: _searchController,
                             style: const TextStyle(color: textDark, fontSize: 15),
                             decoration: InputDecoration(
-                              hintText: 'Search by name, generic, or batch...',
+                              hintText: 'Search medicine, generic or batch',
                               hintStyle: TextStyle(color: softGrey.withValues(alpha: 0.7), fontSize: 15),
                               prefixIcon: Icon(Icons.search_rounded, color: softGrey.withValues(alpha: 0.7)),
                               border: InputBorder.none,
@@ -444,7 +493,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                             onExit: (_) => setState(() => _hoveredRowIndex = null),
                                             child: Container(
                                               color: _hoveredRowIndex == index ? const Color(0xFFF8FAFC) : Colors.white,
-                                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                                               child: Row(
                                                 children: [
                                                   // Medicine Info
@@ -477,10 +526,11 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                                         decoration: BoxDecoration(
                                                           color: const Color(0xFFEFF6FF),
                                                           borderRadius: BorderRadius.circular(6),
+                                                          border: Border.all(color: const Color(0xFFBFDBFE)),
                                                         ),
                                                         child: Text(
-                                                          med.category?.name ?? '—',
-                                                          style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600, fontSize: 12),
+                                                          med.category?.name ?? 'Uncategorized',
+                                                          style: const TextStyle(color: Color(0xFF1D4ED8), fontWeight: FontWeight.w700, fontSize: 12),
                                                         ),
                                                       ),
                                                     ),
@@ -504,9 +554,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                                                     ? const Color(0xFFEF4444)
                                                                     : _isNearExpiry(med.expiryDate)
                                                                         ? const Color(0xFFF59E0B)
-                                                                        : softGrey,
+                                                                        : const Color(0xFF10B981),
                                                                 fontSize: 12,
-                                                                fontWeight: (_isDateExpired(med.expiryDate) || _isNearExpiry(med.expiryDate)) ? FontWeight.bold : FontWeight.normal,
+                                                                fontWeight: FontWeight.bold,
                                                               ),
                                                             ),
                                                           ],
@@ -552,13 +602,13 @@ class _StockScreenState extends ConsumerState<StockScreen> {
 
                                                         _ActionButton(
                                                           icon: Icons.remove_red_eye_outlined,
-                                                          tooltip: 'View',
+                                                          tooltip: 'View Details',
                                                           onPressed: () {},
                                                         ),
                                                         const SizedBox(width: 8),
                                                         _ActionButton(
                                                           icon: Icons.edit_outlined,
-                                                          tooltip: 'Edit',
+                                                          tooltip: 'Edit Medicine',
                                                           onPressed: () => _showEditMedicineDialog(med),
                                                         ),
                                                       ],
@@ -632,6 +682,16 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         ],
       ),
     );
+  }
+
+  String _formatLargeCurrency(double value) {
+    if (value >= 10000000) {
+      return '₹${(value / 10000000).toStringAsFixed(2)}Cr';
+    } else if (value >= 100000) {
+      return '₹${(value / 100000).toStringAsFixed(2)}L';
+    } else {
+      return '₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 2).format(value).trim()}';
+    }
   }
 
   Widget _buildStatusBadge(Medicine med) {

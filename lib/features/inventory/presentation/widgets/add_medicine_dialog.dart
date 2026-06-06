@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../notifier/inventory_notifier.dart';
 import '../../domain/models/medicine.dart';
 
@@ -22,7 +23,7 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
   final _expiryDateController = TextEditingController();
   
   // Additional fields controllers
-  final _reorderLevelController = TextEditingController(text: '10');
+  final _reorderLevelController = TextEditingController();
   final _hsnCodeController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _supplierController = TextEditingController();
@@ -30,31 +31,47 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
 
   String? _selectedCategoryId;
   String? _selectedManufacturerId;
-  String _selectedSchedule = 'OTC';
+  String _selectedDrugType = 'OTC';
   String _selectedGst = '12%';
   bool _submitting = false;
+  bool _addAnother = false;
+  double _calculatedMargin = 0.0;
+  double _calculatedGstAmount = 0.0;
 
   @override
   void initState() {
     super.initState();
+    _mrpController.addListener(_calculatePricing);
+    _purchasePriceController.addListener(_calculatePricing);
+    _quantityController.addListener(_calculateReorderLevel);
     if (widget.medicine != null) {
       _nameController.text = widget.medicine!.name;
       _genericNameController.text = widget.medicine!.genericName ?? '';
       _selectedCategoryId = widget.medicine!.categoryId;
       _selectedManufacturerId = widget.medicine!.manufacturerId;
-      _selectedSchedule = widget.medicine!.prescriptionRequired == true ? 'Rx' : 'OTC';
+      _selectedDrugType = widget.medicine!.prescriptionRequired == true ? 'Prescription' : 'OTC';
       _reorderLevelController.text = (widget.medicine!.reorderLevel ?? 10).toString();
       _selectedGst = widget.medicine!.gstPercentage != null 
           ? '${widget.medicine!.gstPercentage!.toInt()}%' 
           : '12%';
-    } else {
-      _quantityController.text = '0';
-      _purchasePriceController.text = '0.00';
+      _mrpController.text = widget.medicine!.mrp.toString();
+      _purchasePriceController.text = widget.medicine!.purchasePrice.toString();
+      _batchNumberController.text = widget.medicine!.batchNumber ?? '';
+      _quantityController.text = widget.medicine!.stock.toString();
+      if (widget.medicine!.expiryDate != null) {
+        try {
+          final date = DateTime.parse(widget.medicine!.expiryDate!);
+          _expiryDateController.text = DateFormat('MMM yyyy').format(date);
+        } catch (_) {}
+      }
     }
   }
 
   @override
   void dispose() {
+    _mrpController.removeListener(_calculatePricing);
+    _purchasePriceController.removeListener(_calculatePricing);
+    _quantityController.removeListener(_calculateReorderLevel);
     _nameController.dispose();
     _genericNameController.dispose();
     _mrpController.dispose();
@@ -70,12 +87,37 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
     super.dispose();
   }
 
+  void _calculatePricing() {
+    final mrp = double.tryParse(_mrpController.text.trim()) ?? 0.0;
+    final purchase = double.tryParse(_purchasePriceController.text.trim()) ?? 0.0;
+    final gstRate = double.tryParse(_selectedGst.replaceAll('%', '')) ?? 12.0;
+
+    final gstAmount = mrp - (mrp / (1 + gstRate / 100));
+    final profit = mrp - purchase - gstAmount;
+    final margin = purchase > 0 ? (profit / purchase) * 100 : 0.0;
+
+    if (mounted) {
+      setState(() {
+        _calculatedGstAmount = gstAmount;
+        _calculatedMargin = margin;
+      });
+    }
+  }
+
+  void _calculateReorderLevel() {
+    if (widget.medicine == null && _quantityController.text.isNotEmpty) {
+      final qty = int.tryParse(_quantityController.text.trim()) ?? 0;
+      final autoReorder = (qty * 0.2).ceil();
+      _reorderLevelController.text = autoReorder > 0 ? autoReorder.toString() : '';
+    }
+  }
+
   Future<void> _selectExpiryDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 365)),
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 3650)), // up to 10 years
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -91,12 +133,12 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
     );
     if (picked != null) {
       setState(() {
-        _expiryDateController.text = picked.toUtc().toIso8601String().substring(0, 10);
+        _expiryDateController.text = DateFormat('MMM yyyy').format(picked);
       });
     }
   }
 
-  void _submit() async {
+  void _submit({bool addAnother = false}) async {
     if (_formKey.currentState!.validate()) {
       if (_selectedCategoryId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -108,11 +150,25 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
         return;
       }
 
-      setState(() => _submitting = true);
+      setState(() {
+        _submitting = true;
+        _addAnother = addAnother;
+      });
 
       final gstPercentage = double.tryParse(_selectedGst.replaceAll('%', '')) ?? 12.0;
       final reorderLevel = int.tryParse(_reorderLevelController.text.trim()) ?? 10;
-      final prescriptionRequired = _selectedSchedule == 'Rx';
+      final prescriptionRequired = _selectedDrugType == 'Prescription';
+
+      // Parse Expiry Date from MMM yyyy
+      String parsedExpiry = DateTime.now().toUtc().toIso8601String();
+      if (_expiryDateController.text.isNotEmpty) {
+        try {
+          final date = DateFormat('MMM yyyy').parse(_expiryDateController.text);
+          parsedExpiry = date.toUtc().toIso8601String();
+        } catch (_) {
+          // If parsing fails, fallback
+        }
+      }
 
       final bool success;
       if (widget.medicine != null) {
@@ -136,11 +192,11 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
         success = await ref.read(inventoryNotifierProvider.notifier).createMedicine(
           name: _nameController.text.trim(),
           genericName: _genericNameController.text.trim(),
-          mrp: double.parse(_mrpController.text.trim()),
-          purchasePrice: double.parse(_purchasePriceController.text.trim()),
+          mrp: double.tryParse(_mrpController.text.trim()) ?? 0.0,
+          purchasePrice: double.tryParse(_purchasePriceController.text.trim()) ?? 0.0,
           batchNumber: _batchNumberController.text.trim(),
-          quantity: int.parse(_quantityController.text.trim()),
-          expiryDate: DateTime.parse(_expiryDateController.text).toUtc().toIso8601String(),
+          quantity: int.tryParse(_quantityController.text.trim()) ?? 0,
+          expiryDate: parsedExpiry,
           categoryId: _selectedCategoryId!,
           manufacturerId: _selectedManufacturerId,
           gstPercentage: gstPercentage,
@@ -156,7 +212,6 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
       if (mounted) {
         setState(() => _submitting = false);
         if (success) {
-          Navigator.of(context).pop(true); // Return true on success
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(widget.medicine != null 
@@ -165,6 +220,27 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
               backgroundColor: const Color(0xFF0D9488),
             ),
           );
+          
+          if (addAnother) {
+            // Reset form for next entry
+            _formKey.currentState!.reset();
+            _nameController.clear();
+            _genericNameController.clear();
+            _mrpController.clear();
+            _purchasePriceController.text = '0.00';
+            _batchNumberController.clear();
+            _quantityController.text = '0';
+            _expiryDateController.clear();
+            _barcodeController.clear();
+            _supplierController.clear();
+            _notesController.clear();
+            setState(() {
+              _selectedCategoryId = null;
+              _selectedManufacturerId = null;
+            });
+          } else {
+            Navigator.of(context).pop(true);
+          }
         } else {
           final error = ref.read(inventoryNotifierProvider).errorMessage ?? 
               (widget.medicine != null ? 'Failed to update medicine' : 'Failed to add medicine');
@@ -177,6 +253,25 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
         }
       }
     }
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: const Color(0xFF0D9488)),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0D9488),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(child: Divider(color: const Color(0xFFE2E8F0).withValues(alpha: 0.8))),
+      ],
+    );
   }
 
   @override
@@ -193,7 +288,8 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: 750,
+        width: 800,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -212,8 +308,8 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                   Text(
                     isEditMode ? 'Edit Medicine' : 'Add New Medicine',
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
                       color: textDark,
                     ),
                   ),
@@ -225,12 +321,15 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
               ),
               const SizedBox(height: 24),
 
-              // Form fields grid
-              Flexible(
+              // Form fields
+              Expanded(
                 child: SingleChildScrollView(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Row 1: Medicine Name & Generic Name
+                      // --- BASIC INFO ---
+                      _buildSectionHeader('Basic Info', Icons.info_outline),
+                      const SizedBox(height: 20),
                       Row(
                         children: [
                           Expanded(
@@ -244,17 +343,14 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildField(
-                              label: 'GENERIC NAME *',
+                              label: 'GENERIC NAME',
                               hint: 'e.g. Amoxicillin',
                               controller: _genericNameController,
-                              validator: (val) => val == null || val.trim().isEmpty ? 'Enter generic name' : null,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 20),
-
-                      // Row 2: Manufacturer & Category
                       Row(
                         children: [
                           Expanded(
@@ -266,35 +362,61 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: softGrey),
                                 ),
                                 const SizedBox(height: 8),
-                                DropdownButtonFormField<String>(
-                                  initialValue: _selectedManufacturerId,
-                                  hint: const Text('e.g. Cipla Ltd', style: TextStyle(fontSize: 14, color: softGrey)),
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
-                                    ),
-                                  ),
-                                  style: const TextStyle(color: textDark, fontSize: 14),
-                                  items: manufacturers.map((man) {
-                                    return DropdownMenuItem<String>(
-                                      value: man.id,
-                                      child: Text(man.name),
+                                Autocomplete<Manufacturer>(
+                                  displayStringForOption: (option) => option.name,
+                                  optionsBuilder: (textEditingValue) {
+                                    if (textEditingValue.text.isEmpty) return manufacturers;
+                                    return manufacturers.where((m) => m.name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                                  },
+                                  onSelected: (selection) => setState(() => _selectedManufacturerId = selection.id),
+                                  fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                                    if (isEditMode && _selectedManufacturerId != null && controller.text.isEmpty) {
+                                      final man = manufacturers.where((m) => m.id == _selectedManufacturerId).firstOrNull;
+                                      if (man != null) controller.text = man.name;
+                                    }
+                                    return TextFormField(
+                                      controller: controller,
+                                      focusNode: focusNode,
+                                      style: const TextStyle(color: textDark, fontSize: 14),
+                                      decoration: InputDecoration(
+                                        hintText: 'Select or search manufacturer',
+                                        hintStyle: const TextStyle(color: softGrey, fontSize: 14),
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: primaryTeal, width: 1.8)),
+                                        suffixIcon: const Icon(Icons.arrow_drop_down, color: softGrey),
+                                      ),
                                     );
-                                  }).toList(),
-                                  onChanged: (val) => setState(() => _selectedManufacturerId = val),
+                                  },
+                                  optionsViewBuilder: (context, onSelected, options) {
+                                    return Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Material(
+                                        elevation: 4,
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: ConstrainedBox(
+                                          constraints: const BoxConstraints(maxHeight: 200, maxWidth: 300),
+                                          child: ListView.builder(
+                                            padding: EdgeInsets.zero,
+                                            itemCount: options.length,
+                                            itemBuilder: (context, index) {
+                                              final option = options.elementAt(index);
+                                              return InkWell(
+                                                onTap: () => onSelected(option),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(16.0),
+                                                  child: Text(option.name, style: const TextStyle(color: textDark)),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -317,18 +439,9 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                                     filled: true,
                                     fillColor: Colors.white,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: primaryTeal, width: 1.8)),
                                   ),
                                   style: const TextStyle(color: textDark, fontSize: 14),
                                   items: categories.map((cat) {
@@ -345,8 +458,6 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                         ],
                       ),
                       const SizedBox(height: 20),
-
-                      // Row 3: Schedule & Batch Number
                       Row(
                         children: [
                           Expanded(
@@ -354,63 +465,56 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'SCHEDULE',
+                                  'DRUG TYPE',
                                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: softGrey),
                                 ),
                                 const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
-                                  initialValue: _selectedSchedule,
+                                  initialValue: _selectedDrugType,
                                   isExpanded: true,
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: Colors.white,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: primaryTeal, width: 1.8)),
                                   ),
                                   style: const TextStyle(color: textDark, fontSize: 14),
                                   items: const [
                                     DropdownMenuItem(value: 'OTC', child: Text('OTC')),
-                                    DropdownMenuItem(value: 'Rx', child: Text('Rx')),
+                                    DropdownMenuItem(value: 'Prescription', child: Text('Prescription')),
+                                    DropdownMenuItem(value: 'Controlled Drug', child: Text('Controlled Drug')),
                                   ],
                                   onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() => _selectedSchedule = val);
-                                    }
+                                    if (val != null) setState(() => _selectedDrugType = val);
                                   },
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(width: 16),
+                          Expanded(child: const SizedBox()), // Spacer
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 32),
+                      
+                      // --- INVENTORY ---
+                      _buildSectionHeader('Inventory', Icons.inventory_2_outlined),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
                           Expanded(
                             child: _buildField(
                               label: 'BATCH NUMBER *',
                               hint: 'e.g. B-20241',
                               controller: _batchNumberController,
                               enabled: !isEditMode,
-                              validator: isEditMode 
-                                  ? null 
-                                  : (val) => val == null || val.trim().isEmpty ? 'Enter batch number' : null,
+                              validator: isEditMode ? null : (val) => val == null || val.trim().isEmpty ? 'Enter batch' : null,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Row 4: Expiry Date & MRP
-                      Row(
-                        children: [
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,73 +531,26 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                                   onTap: isEditMode ? null : () => _selectExpiryDate(context),
                                   style: TextStyle(color: isEditMode ? softGrey : textDark, fontSize: 14),
                                   decoration: InputDecoration(
-                                    hintText: 'mm/dd/yyyy',
+                                    hintText: 'MMM yyyy',
                                     hintStyle: const TextStyle(color: softGrey, fontSize: 14),
                                     prefixIcon: const Icon(Icons.calendar_today_outlined, color: softGrey, size: 16),
                                     filled: true,
                                     fillColor: isEditMode ? const Color(0xFFF1F5F9) : Colors.white,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: primaryTeal, width: 1.8)),
                                   ),
-                                  validator: isEditMode 
-                                      ? null 
-                                      : (val) => val == null || val.isEmpty ? 'Select expiry date' : null,
+                                  validator: isEditMode ? null : (val) => val == null || val.isEmpty ? 'Select expiry' : null,
                                 ),
                               ],
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildField(
-                              label: 'MRP (₹) *',
-                              hint: 'e.g. 144.68',
-                              controller: _mrpController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              enabled: !isEditMode,
-                              validator: isEditMode ? null : (val) {
-                                if (val == null || val.isEmpty) return 'Enter MRP';
-                                final numVal = double.tryParse(val);
-                                if (numVal == null) return 'Must be a number';
-                                if (numVal <= 0) return 'MRP must be greater than 0';
-                                return null;
-                              },
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 20),
-
-                      // Row 5: Purchase Cost & Stock Quantity
                       Row(
                         children: [
-                          Expanded(
-                            child: _buildField(
-                              label: 'PURCHASE COST (₹)',
-                              hint: '0.00',
-                              controller: _purchasePriceController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              enabled: !isEditMode,
-                              validator: isEditMode ? null : (val) {
-                                if (val == null || val.isEmpty) return 'Enter purchase cost';
-                                final numVal = double.tryParse(val);
-                                if (numVal == null) return 'Must be a number';
-                                if (numVal < 0) return 'Cannot be negative';
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
                           Expanded(
                             child: _buildField(
                               label: 'STOCK QUANTITY *',
@@ -503,37 +560,61 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                               enabled: !isEditMode,
                               validator: isEditMode ? null : (val) {
                                 if (val == null || val.isEmpty) return 'Enter quantity';
-                                final numVal = int.tryParse(val);
-                                if (numVal == null) return 'Must be an integer';
-                                if (numVal < 0) return 'Cannot be negative';
+                                if (int.tryParse(val) == null) return 'Must be an integer';
                                 return null;
                               },
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Row 6: Reorder Level & GST %
-                      Row(
-                        children: [
+                          const SizedBox(width: 16),
                           Expanded(
                             child: _buildField(
                               label: 'REORDER LEVEL',
                               hint: '10',
                               controller: _reorderLevelController,
                               keyboardType: TextInputType.number,
-                              validator: (val) {
-                                if (val != null && val.isNotEmpty) {
-                                  final numVal = int.tryParse(val);
-                                  if (numVal == null) return 'Must be an integer';
-                                  if (numVal < 0) return 'Cannot be negative';
-                                }
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // --- PRICING ---
+                      _buildSectionHeader('Pricing', Icons.currency_rupee_outlined),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildField(
+                              label: 'MRP *',
+                              hint: '0.00',
+                              controller: _mrpController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              enabled: !isEditMode,
+                              prefixText: '₹ ',
+                              validator: isEditMode ? null : (val) {
+                                if (val == null || val.isEmpty) return 'Enter MRP';
+                                if (double.tryParse(val) == null) return 'Invalid number';
                                 return null;
                               },
                             ),
                           ),
                           const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildField(
+                              label: 'PURCHASE COST',
+                              hint: '0.00',
+                              controller: _purchasePriceController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              enabled: !isEditMode,
+                              prefixText: '₹ ',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -550,18 +631,9 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                                     filled: true,
                                     fillColor: Colors.white,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: borderGrey, width: 1.2),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: primaryTeal, width: 1.8),
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: primaryTeal, width: 1.8)),
                                   ),
                                   style: const TextStyle(color: textDark, fontSize: 14),
                                   items: const [
@@ -574,19 +646,86 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                                   onChanged: (val) {
                                     if (val != null) {
                                       setState(() => _selectedGst = val);
+                                      _calculatePricing();
                                     }
                                   },
                                 ),
                               ],
                             ),
                           ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text('PROFIT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: softGrey)),
+                                      Text(
+                                        '${_calculatedMargin.toStringAsFixed(1)}%',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: _calculatedMargin > 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Container(width: 1, height: 28, color: const Color(0xFFCBD5E1)),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text('GST AMT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: softGrey)),
+                                      Text(
+                                        '₹${_calculatedGstAmount.toStringAsFixed(2)}',
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textDark),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 20),
 
-                      // Row 7: HSN Code & Barcode / SKU
+                      const SizedBox(height: 32),
+
+                      // --- OPTIONAL ---
+                      _buildSectionHeader('Optional Details', Icons.more_horiz),
+                      const SizedBox(height: 20),
                       Row(
                         children: [
+                          Expanded(
+                            child: _buildField(
+                              label: 'BARCODE / SKU',
+                              hint: 'Scan or enter barcode',
+                              controller: _barcodeController,
+                              suffixIcon: Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: TextButton.icon(
+                                  onPressed: () {},
+                                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
+                                  label: const Text('Scan'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: primaryTeal,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: _buildField(
                               label: 'HSN CODE',
@@ -594,19 +733,9 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                               controller: _hsnCodeController,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildField(
-                              label: 'BARCODE / SKU',
-                              hint: 'Scan or enter barcode',
-                              controller: _barcodeController,
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 20),
-
-                      // Row 8: Supplier & Notes
                       Row(
                         children: [
                           Expanded(
@@ -620,51 +749,59 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
                           Expanded(
                             child: _buildField(
                               label: 'NOTES',
-                              hint: 'Notes',
+                              hint: 'Any additional notes',
                               controller: _notesController,
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              
+              const SizedBox(height: 24),
+              const Divider(color: borderGrey, height: 1),
+              const SizedBox(height: 16),
 
               // Action Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton(
+                  TextButton(
                     onPressed: _submitting ? null : () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
+                    style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      side: const BorderSide(color: borderGrey),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: softGrey, fontWeight: FontWeight.bold)),
+                    child: const Text('Cancel', style: TextStyle(color: softGrey, fontWeight: FontWeight.bold, fontSize: 15)),
                   ),
                   const SizedBox(width: 16),
+                  if (!isEditMode)
+                    OutlinedButton(
+                      onPressed: _submitting ? null : () => _submit(addAnother: true),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: _submitting && _addAnother
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(primaryTeal)))
+                          : const Text('Save & Add Another', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold, fontSize: 14)),
+                    ),
+                  if (!isEditMode) const SizedBox(width: 12),
                   ElevatedButton(
-                    onPressed: _submitting ? null : _submit,
+                    onPressed: _submitting ? null : () => _submit(addAnother: false),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       backgroundColor: primaryTeal,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       elevation: 0,
                     ),
-                    child: _submitting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(Colors.white),
-                            ),
-                          )
-                        : Text(isEditMode ? 'Save Changes' : 'Add Medicine', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    child: _submitting && !_addAnother
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
+                        : Text(isEditMode ? 'Save Changes' : 'Add Medicine', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   ),
                 ],
               ),
@@ -681,6 +818,8 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
     required TextEditingController controller,
     TextInputType? keyboardType,
     bool enabled = true,
+    String? prefixText,
+    Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
     const primaryTeal = Color(0xFF0D9488);
@@ -703,26 +842,17 @@ class _AddMedicineDialogState extends ConsumerState<AddMedicineDialog> {
           style: TextStyle(color: enabled ? textDark : softGrey, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: softGrey, fontSize: 14),
+            hintStyle: TextStyle(color: softGrey.withValues(alpha: 0.6), fontSize: 14),
             filled: true,
             fillColor: enabled ? Colors.white : const Color(0xFFF1F5F9),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: borderGrey, width: 1.2),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: borderGrey, width: 1.2),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: borderGrey, width: 1.2),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: primaryTeal, width: 1.8),
-            ),
+            prefixText: prefixText,
+            prefixStyle: const TextStyle(color: textDark, fontSize: 14, fontWeight: FontWeight.w600),
+            suffixIcon: suffixIcon,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+            disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: borderGrey, width: 1.2)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: primaryTeal, width: 1.8)),
           ),
           validator: validator,
         ),

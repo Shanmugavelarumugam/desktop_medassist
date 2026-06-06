@@ -580,15 +580,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Container(
         height: 48,
         decoration: BoxDecoration(
-          // Active background teal tint exactly as request screenshot
-          color: isActive ? activeColor.withValues(alpha: 0.08) : Colors.transparent,
+          color: isActive ? activeColor.withValues(alpha: 0.12) : Colors.transparent,
         ),
         child: Row(
           children: [
             // Left vertical active tab indicator
             Container(
               width: 4,
-              height: 24,
+              height: 48, // Full height of the item
               decoration: BoxDecoration(
                 color: isActive ? activeColor : Colors.transparent,
                 borderRadius: const BorderRadius.only(
@@ -601,14 +600,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Icon(
               icon,
               color: isActive ? activeColor : const Color(0xFF64748B),
-              size: 20,
+              size: isActive ? 22 : 20,
             ),
             const SizedBox(width: 14),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? activeColor : const Color(0xFF475569),
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                color: isActive ? const Color(0xFF0F172A) : const Color(0xFF475569),
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
                 fontSize: 14,
               ),
             ),

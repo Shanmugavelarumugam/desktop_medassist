@@ -301,37 +301,6 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                     ),
                     const Spacer(),
 
-                    // Template Selector Dropdown
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: bgLight,
-                        border: Border.all(color: borderGrey),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedTemplate,
-                          icon: const Icon(Icons.style_rounded, color: primaryTeal, size: 16),
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textDark),
-                          items: const [
-                            DropdownMenuItem(value: 'classic', child: Text('Classic A4')),
-                            DropdownMenuItem(value: 'modern', child: Text('Modern Corporate')),
-                            DropdownMenuItem(value: 'thermal', child: Text('Thermal POS')),
-                          ],
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() {
-                                _selectedTemplate = val;
-                                _showPreview = true;
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-
                     // Live Preview Toggle Button
                     ElevatedButton.icon(
                       onPressed: () {
@@ -680,19 +649,6 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                       label: const Text('Generate Invoice', style: TextStyle(fontWeight: FontWeight.bold)),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: primaryTeal,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                    ),
-                                    ElevatedButton.icon(
-                                      onPressed: _isSaving ? null : () => _submitInvoice(printDirectly: true),
-                                      icon: const Icon(Icons.print_rounded, size: 18),
-                                      label: const Text('Print A4 Invoice', style: TextStyle(fontWeight: FontWeight.bold)),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF0D9488),
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                         shape: RoundedRectangleBorder(
