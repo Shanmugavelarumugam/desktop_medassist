@@ -137,7 +137,11 @@ class BillingNotifier extends Notifier<BillingState> {
     );
   }
 
-  Future<bool> checkoutCart({String notes = ''}) async {
+  Future<bool> checkoutCart({
+    required String patientName,
+    required String patientPhone,
+    String notes = '',
+  }) async {
     if (state.cartItems.isEmpty) {
       state = state.copyWith(errorMessage: 'Cart is empty');
       return false;
@@ -150,23 +154,12 @@ class BillingNotifier extends Notifier<BillingState> {
     );
     try {
       final itemsPayload = state.cartItems.map((item) {
-        final unitTotal = item.mrp;
-        final gstRate = (item.medicine.gstPercentage ?? 12.0) / 100.0;
-        final unitSubtotal = unitTotal / (1.0 + gstRate);
-        final unitGst = unitTotal - unitSubtotal;
-
         return {
           'medicineId': item.medicine.id,
           'batchId': item.batchId,
           'quantity': item.quantity,
-          'qty': item.quantity,
-          'price': unitSubtotal,
-          'unitPrice': unitSubtotal,
-          'mrp': item.mrp,
-          'gst': unitGst,
-          'gstAmount': unitGst,
-          'total': unitTotal,
-          'totalPrice': unitTotal,
+          'unitPrice': item.mrp,
+          'gstPercentage': item.medicine.gstPercentage ?? 12,
         };
       }).toList();
 
@@ -183,12 +176,22 @@ class BillingNotifier extends Notifier<BillingState> {
         );
       }
 
+      final paymentsPayload = [
+        {
+          'paymentMode': state.paymentMethod,
+          'amount': state.cartTotal,
+        }
+      ];
+
       final payload = {
-        'subtotal': state.cartSubtotal,
-        'discount': state.discount,
-        'gst': state.cartGst,
-        'total': state.cartTotal,
+        'patientName': patientName.trim().isEmpty ? 'Walk-in Customer' : patientName.trim(),
+        'patientPhone': patientPhone.trim().isEmpty ? '9876543210' : patientPhone.trim(),
+        'discountAmount': state.discount,
+        'discountPercentage': 0,
+        'paymentMode': state.paymentMethod,
         'items': itemsPayload,
+        'payments': paymentsPayload,
+        'notes': notes.trim(),
       };
 
       debugPrint('===== INVOICE PAYLOAD =====');
@@ -196,11 +199,11 @@ class BillingNotifier extends Notifier<BillingState> {
 
       final invoice = await _repository.createInvoice(
         items: itemsPayload,
-        subtotal: state.cartSubtotal,
-        discount: state.discount,
-        gst: state.cartGst,
-        total: state.cartTotal,
-        paymentMethod: state.paymentMethod,
+        patientName: payload['patientName'] as String,
+        patientPhone: payload['patientPhone'] as String,
+        discountAmount: payload['discountAmount'] as double,
+        paymentMode: payload['paymentMode'] as String,
+        payments: paymentsPayload,
         notes: notes.trim(),
       );
 

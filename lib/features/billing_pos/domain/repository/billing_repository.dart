@@ -3,11 +3,11 @@ import '../../domain/models/invoice.dart';
 abstract class BillingRepository {
   Future<Invoice> createInvoice({
     required List<Map<String, dynamic>> items,
-    required double subtotal,
-    required double discount,
-    required double gst,
-    required double total,
-    required String paymentMethod,
+    required String patientName,
+    required String patientPhone,
+    required double discountAmount,
+    required String paymentMode,
+    required List<Map<String, dynamic>> payments,
     required String notes,
   });
 

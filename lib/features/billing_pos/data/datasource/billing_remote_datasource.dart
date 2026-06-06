@@ -6,11 +6,11 @@ import '../../domain/models/invoice.dart';
 abstract class BillingRemoteDataSource {
   Future<Invoice> createInvoice({
     required List<Map<String, dynamic>> items,
-    required double subtotal,
-    required double discount,
-    required double gst,
-    required double total,
-    required String paymentMethod,
+    required String patientName,
+    required String patientPhone,
+    required double discountAmount,
+    required String paymentMode,
+    required List<Map<String, dynamic>> payments,
     required String notes,
   });
 
@@ -29,21 +29,22 @@ class BillingRemoteDataSourceImpl implements BillingRemoteDataSource {
   @override
   Future<Invoice> createInvoice({
     required List<Map<String, dynamic>> items,
-    required double subtotal,
-    required double discount,
-    required double gst,
-    required double total,
-    required String paymentMethod,
+    required String patientName,
+    required String patientPhone,
+    required double discountAmount,
+    required String paymentMode,
+    required List<Map<String, dynamic>> payments,
     required String notes,
   }) async {
     try {
       final response = await _dio.post('/api/billing/invoices', data: {
+        'patientName': patientName,
+        'patientPhone': patientPhone,
+        'discountAmount': discountAmount,
+        'discountPercentage': 0,
+        'paymentMode': paymentMode,
         'items': items,
-        'subtotal': subtotal,
-        'discount': discount,
-        'gst': gst,
-        'total': total,
-        'paymentMethod': paymentMethod,
+        'payments': payments,
         'notes': notes,
       });
 
@@ -75,6 +76,7 @@ class BillingRemoteDataSourceImpl implements BillingRemoteDataSource {
     try {
       final response = await _dio.get('/api/inventory/batches', queryParameters: {
         'medicineId': medicineId,
+        'medicine_id': medicineId,
       });
       if (response.data != null && response.data['success'] == true) {
         final List list = response.data['data']?['batches'] ?? [];

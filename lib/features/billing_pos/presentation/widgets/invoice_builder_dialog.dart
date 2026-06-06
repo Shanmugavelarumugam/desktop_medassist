@@ -199,14 +199,21 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
 
       final paymentMethod = _paymentTerms.toUpperCase() == 'DUE' ? 'CASH' : _paymentTerms.toUpperCase();
 
+      final paymentsPayload = [
+        {
+          'paymentMode': paymentMethod,
+          'amount': total,
+        }
+      ];
+
       final repository = ref.read(billingRepositoryProvider);
       final invoice = await repository.createInvoice(
         items: itemsPayload,
-        subtotal: subtotal,
-        discount: discount,
-        gst: gst,
-        total: total,
-        paymentMethod: paymentMethod,
+        patientName: _customerNameController.text.trim().isEmpty ? 'Walk-in Customer' : _customerNameController.text.trim(),
+        patientPhone: _phoneController.text.trim().isEmpty ? '9876543210' : _phoneController.text.trim(),
+        discountAmount: discount,
+        paymentMode: paymentMethod,
+        payments: paymentsPayload,
         notes: jsonEncode(metadata),
       );
 
