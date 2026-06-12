@@ -25,48 +25,63 @@ class ExpiryBatchRemoteDataSourceImpl implements ExpiryBatchRemoteDataSource {
       }
       throw Exception(response.data?['message'] ?? 'Failed to load batches');
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error fetching batches');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error fetching batches',
+      );
     }
   }
 
   @override
   Future<void> quarantineBatch(String id) async {
     try {
-      final response = await _dio.post('/api/batches/$id/quarantine');
+      final response = await _dio.post('/api/batches/$id/quarantine', data: {});
       if (response.data == null || response.data['success'] != true) {
-        throw Exception(response.data?['message'] ?? 'Failed to quarantine batch');
+        throw Exception(
+          response.data?['message'] ?? 'Failed to quarantine batch',
+        );
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error quarantining batch');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error quarantining batch',
+      );
     }
   }
 
   @override
   Future<void> releaseBatch(String id) async {
     try {
-      final response = await _dio.post('/api/batches/$id/release');
+      final response = await _dio.post('/api/batches/$id/release', data: {});
       if (response.data == null || response.data['success'] != true) {
         throw Exception(response.data?['message'] ?? 'Failed to release batch');
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error releasing batch');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error releasing batch',
+      );
     }
   }
 
   @override
   Future<void> recallBatch(String id) async {
     try {
-      final response = await _dio.post('/api/batches/$id/recall');
+      final response = await _dio.post('/api/batches/$id/recall', data: {});
       if (response.data == null || response.data['success'] != true) {
         throw Exception(response.data?['message'] ?? 'Failed to recall batch');
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error recalling batch');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error recalling batch',
+      );
     }
   }
 }
 
-final expiryBatchRemoteDataSourceProvider = Provider<ExpiryBatchRemoteDataSource>((ref) {
-  final dio = ref.watch(dioProvider);
-  return ExpiryBatchRemoteDataSourceImpl(dio);
-});
+final expiryBatchRemoteDataSourceProvider =
+    Provider<ExpiryBatchRemoteDataSource>((ref) {
+      final dio = ref.watch(dioProvider);
+      return ExpiryBatchRemoteDataSourceImpl(dio);
+    });

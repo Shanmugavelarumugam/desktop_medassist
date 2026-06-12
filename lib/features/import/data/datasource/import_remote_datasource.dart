@@ -36,9 +36,15 @@ class ImportRemoteDataSourceImpl implements ImportRemoteDataSource {
         final List list = response.data['data'] ?? [];
         return list.map((json) => ImportJob.fromJson(json)).toList();
       }
-      throw Exception(response.data?['message'] ?? 'Failed to load import history');
+      throw Exception(
+        response.data?['message'] ?? 'Failed to load import history',
+      );
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? e.response?.data?['error'] ?? 'Network error loading import history');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            e.response?.data?['error'] ??
+            'Network error loading import history',
+      );
     }
   }
 
@@ -52,24 +58,29 @@ class ImportRemoteDataSourceImpl implements ImportRemoteDataSource {
       final response = await _dio.post(
         '/api/import/pdf-invoice',
         data: formData,
-        options: Options(
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
       );
 
       if (response.data != null && response.data['success'] == true) {
         return ImportJob.fromJson(response.data['data']);
       }
-      throw Exception(response.data?['message'] ?? 'Failed to upload PDF invoice');
+      throw Exception(
+        response.data?['message'] ?? 'Failed to upload PDF invoice',
+      );
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? e.response?.data?['error'] ?? 'Network error uploading PDF invoice');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            e.response?.data?['error'] ??
+            'Network error uploading PDF invoice',
+      );
     }
   }
 
   @override
-  Future<ImportJob> uploadSupplierInvoice(String filePath, String fileName) async {
+  Future<ImportJob> uploadSupplierInvoice(
+    String filePath,
+    String fileName,
+  ) async {
     try {
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(filePath, filename: fileName),
@@ -78,19 +89,21 @@ class ImportRemoteDataSourceImpl implements ImportRemoteDataSource {
       final response = await _dio.post(
         '/api/import/supplier-invoice',
         data: formData,
-        options: Options(
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
       );
 
       if (response.data != null && response.data['success'] == true) {
         return ImportJob.fromJson(response.data['data']);
       }
-      throw Exception(response.data?['message'] ?? 'Failed to upload supplier invoice');
+      throw Exception(
+        response.data?['message'] ?? 'Failed to upload supplier invoice',
+      );
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? e.response?.data?['error'] ?? 'Network error uploading supplier invoice');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            e.response?.data?['error'] ??
+            'Network error uploading supplier invoice',
+      );
     }
   }
 
@@ -118,7 +131,11 @@ class ImportRemoteDataSourceImpl implements ImportRemoteDataSource {
       }
       throw Exception(response.data?['message'] ?? 'Bulk import failed');
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? e.response?.data?['error'] ?? 'Network error in bulk import');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            e.response?.data?['error'] ??
+            'Network error in bulk import',
+      );
     }
   }
 
@@ -144,7 +161,11 @@ class ImportRemoteDataSourceImpl implements ImportRemoteDataSource {
       }
       throw Exception(response.data?['message'] ?? 'Import upload failed');
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? e.response?.data?['error'] ?? 'Network error uploading import file');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            e.response?.data?['error'] ??
+            'Network error uploading import file',
+      );
     }
   }
 
@@ -155,9 +176,15 @@ class ImportRemoteDataSourceImpl implements ImportRemoteDataSource {
       if (response.data != null && response.data['success'] == true) {
         return response.data;
       }
-      throw Exception(response.data?['message'] ?? 'Failed to get import status');
+      throw Exception(
+        response.data?['message'] ?? 'Failed to get import status',
+      );
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? e.response?.data?['error'] ?? 'Network error fetching import status');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            e.response?.data?['error'] ??
+            'Network error fetching import status',
+      );
     }
   }
 }

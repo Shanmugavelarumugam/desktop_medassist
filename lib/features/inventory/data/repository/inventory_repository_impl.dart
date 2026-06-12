@@ -9,8 +9,8 @@ class InventoryRepositoryImpl implements InventoryRepository {
   InventoryRepositoryImpl(this._remoteDataSource);
 
   @override
-  Future<List<Medicine>> getMedicines() {
-    return _remoteDataSource.getMedicines();
+  Future<List<Medicine>> getMedicines({String? search, int? limit}) {
+    return _remoteDataSource.getMedicines(search: search, limit: limit);
   }
 
   @override
@@ -96,6 +96,11 @@ class InventoryRepositoryImpl implements InventoryRepository {
   @override
   Future<void> deleteMedicine({required String id}) {
     return _remoteDataSource.deleteMedicine(id: id);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getSummary() {
+    return _remoteDataSource.getSummary();
   }
 
   @override

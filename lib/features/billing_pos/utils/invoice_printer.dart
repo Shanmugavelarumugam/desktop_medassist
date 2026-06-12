@@ -26,7 +26,11 @@ class InvoicePrinter {
     if (templateType == 'thermal') {
       pdf.addPage(
         pw.Page(
-          pageFormat: const PdfPageFormat(80 * PdfPageFormat.mm, 200 * PdfPageFormat.mm, marginAll: 15),
+          pageFormat: const PdfPageFormat(
+            80 * PdfPageFormat.mm,
+            200 * PdfPageFormat.mm,
+            marginAll: 15,
+          ),
           build: (pw.Context context) {
             return _buildThermalLayout(invoice, metadata);
           },
@@ -61,10 +65,62 @@ class InvoicePrinter {
     );
   }
 
+  static List<InvoiceItem> _consolidateItems(List<InvoiceItem> items) {
+    final Map<String, List<InvoiceItem>> groups = {};
+    final List<String> order = [];
+    for (final item in items) {
+      if (!groups.containsKey(item.name)) {
+        groups[item.name] = [];
+        order.add(item.name);
+      }
+      groups[item.name]!.add(item);
+    }
+
+    return order.map((name) {
+      final group = groups[name]!;
+      if (group.length == 1) return group.first;
+
+      final totalQty = group.fold<int>(0, (sum, item) => sum + item.qty);
+      final totalVal = group.fold<double>(
+        0.0,
+        (sum, item) => sum + (double.tryParse(item.total.toString()) ?? 0.0),
+      );
+      final effectiveMrp = totalQty > 0 ? (totalVal / totalQty) : 0.0;
+      final totalGstAmount = group.fold<double>(
+        0.0,
+        (sum, item) =>
+            sum + (double.tryParse(item.gstAmount.toString()) ?? 0.0),
+      );
+
+      final averagePrice = totalQty > 0
+          ? group.fold<double>(
+                  0.0,
+                  (sum, item) => sum + (item.price * item.qty),
+                ) /
+                totalQty
+          : 0.0;
+
+      final combinedBatch = group.map((e) => e.batchNumber).toSet().join(', ');
+
+      return group.first.copyWith(
+        qty: totalQty,
+        price: averagePrice,
+        mrp: effectiveMrp,
+        gstAmount: totalGstAmount,
+        total: totalVal,
+        batchNumber: combinedBatch,
+      );
+    }).toList();
+  }
+
   // ==========================================
   // CLASSIC A4 LAYOUT
   // ==========================================
-  static pw.Widget _buildClassicLayout(Invoice invoice, Map<String, dynamic>? metadata, String cleanNotes) {
+  static pw.Widget _buildClassicLayout(
+    Invoice invoice,
+    Map<String, dynamic>? metadata,
+    String cleanNotes,
+  ) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
@@ -79,7 +135,10 @@ class InvoicePrinter {
         _buildClassicSummary(invoice),
         if (cleanNotes.isNotEmpty) ...[
           pw.SizedBox(height: 15),
-          pw.Text('Notes: $cleanNotes', style: pw.TextStyle(fontSize: 10, fontStyle: pw.FontStyle.italic)),
+          pw.Text(
+            'Notes: $cleanNotes',
+            style: pw.TextStyle(fontSize: 10, fontStyle: pw.FontStyle.italic),
+          ),
         ],
         pw.Spacer(),
         _buildClassicDivider(PdfColors.grey400),
@@ -135,7 +194,10 @@ class InvoicePrinter {
     );
   }
 
-  static pw.Widget _buildClassicInvoiceInfo(Invoice invoice, Map<String, dynamic>? metadata) {
+  static pw.Widget _buildClassicInvoiceInfo(
+    Invoice invoice,
+    Map<String, dynamic>? metadata,
+  ) {
     final docName = metadata?['doctorName'] ?? '';
     final rxNo = metadata?['prescriptionNo'] ?? '';
     final custGst = metadata?['gstNumber'] ?? '';
@@ -151,15 +213,37 @@ class InvoicePrinter {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text('BILLED TO:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey700)),
+              pw.Text(
+                'BILLED TO:',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                  color: PdfColors.grey700,
+                ),
+              ),
               pw.SizedBox(height: 4),
-              pw.Text(invoice.patientName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+              pw.Text(
+                invoice.patientName,
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
               if (invoice.patientPhone.isNotEmpty)
-                pw.Text('Ph: ${invoice.patientPhone}', style: const pw.TextStyle(fontSize: 10)),
+                pw.Text(
+                  'Ph: ${invoice.patientPhone}',
+                  style: const pw.TextStyle(fontSize: 10),
+                ),
               if (custGst.isNotEmpty)
-                pw.Text('GSTIN: $custGst', style: const pw.TextStyle(fontSize: 10)),
+                pw.Text(
+                  'GSTIN: $custGst',
+                  style: const pw.TextStyle(fontSize: 10),
+                ),
               if (address.isNotEmpty)
-                pw.Text('Address: $address', style: const pw.TextStyle(fontSize: 10)),
+                pw.Text(
+                  'Address: $address',
+                  style: const pw.TextStyle(fontSize: 10),
+                ),
             ],
           ),
         ),
@@ -170,23 +254,50 @@ class InvoicePrinter {
             children: [
               pw.Row(
                 children: [
-                  pw.Text('Invoice No: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                  pw.Text(invoice.invoiceNumber, style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text(
+                    'Invoice No: ',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                  pw.Text(
+                    invoice.invoiceNumber,
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
                 ],
               ),
               pw.SizedBox(height: 2),
               pw.Row(
                 children: [
-                  pw.Text('Invoice Date: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                  pw.Text(invoice.date.split('T')[0], style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text(
+                    'Invoice Date: ',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                  pw.Text(
+                    invoice.date.split('T')[0],
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
                 ],
               ),
               if (dueDate.isNotEmpty) ...[
                 pw.SizedBox(height: 2),
                 pw.Row(
                   children: [
-                    pw.Text('Due Date: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                    pw.Text(dueDate.split('T')[0], style: const pw.TextStyle(fontSize: 10)),
+                    pw.Text(
+                      'Due Date: ',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                    pw.Text(
+                      dueDate.split('T')[0],
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
                   ],
                 ),
               ],
@@ -194,18 +305,37 @@ class InvoicePrinter {
                 pw.SizedBox(height: 2),
                 pw.Row(
                   children: [
-                    pw.Text('Payment Terms: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                    pw.Text(
+                      'Payment Terms: ',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
                     pw.Text(payTerms, style: const pw.TextStyle(fontSize: 10)),
                   ],
                 ),
               ],
               if (docName.isNotEmpty || rxNo.isNotEmpty) ...[
                 pw.SizedBox(height: 6),
-                pw.Text('PRESCRIPTION DETAILS:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.grey700)),
+                pw.Text(
+                  'PRESCRIPTION DETAILS:',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 9,
+                    color: PdfColors.grey700,
+                  ),
+                ),
                 if (docName.isNotEmpty)
-                  pw.Text('Doctor: $docName', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text(
+                    'Doctor: $docName',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
                 if (rxNo.isNotEmpty)
-                  pw.Text('Rx No: $rxNo', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text(
+                    'Rx No: $rxNo',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
               ],
             ],
           ),
@@ -219,15 +349,15 @@ class InvoicePrinter {
   }
 
   static pw.Widget _buildClassicTable(Invoice invoice) {
+    final consolidated = _consolidateItems(invoice.items);
     return pw.Table(
       columnWidths: const {
-        0: pw.FlexColumnWidth(3),
-        1: pw.FlexColumnWidth(1.5),
-        2: pw.FlexColumnWidth(0.8),
-        3: pw.FlexColumnWidth(1.2),
+        0: pw.FlexColumnWidth(4.5),
+        1: pw.FlexColumnWidth(0.8),
+        2: pw.FlexColumnWidth(1.2),
+        3: pw.FlexColumnWidth(1),
         4: pw.FlexColumnWidth(1),
-        5: pw.FlexColumnWidth(1),
-        6: pw.FlexColumnWidth(1.5),
+        5: pw.FlexColumnWidth(1.5),
       },
       children: [
         pw.TableRow(
@@ -239,30 +369,134 @@ class InvoicePrinter {
             ),
           ),
           children: [
-            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Medicine', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10))),
-            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Batch', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10))),
-            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Qty', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10), textAlign: pw.TextAlign.center)),
-            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('MRP', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10), textAlign: pw.TextAlign.right)),
-            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Disc', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10), textAlign: pw.TextAlign.right)),
-            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('GST', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10), textAlign: pw.TextAlign.right)),
-            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Amount', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10), textAlign: pw.TextAlign.right)),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(
+                'Medicine',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(
+                'Qty',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                ),
+                textAlign: pw.TextAlign.center,
+              ),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(
+                'MRP',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                ),
+                textAlign: pw.TextAlign.right,
+              ),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(
+                'Disc',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                ),
+                textAlign: pw.TextAlign.right,
+              ),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(
+                'GST',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                ),
+                textAlign: pw.TextAlign.right,
+              ),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(
+                'Amount',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                ),
+                textAlign: pw.TextAlign.right,
+              ),
+            ),
           ],
         ),
-        ...invoice.items.map((item) {
+        ...consolidated.map((item) {
           final itemTotalRaw = item.mrp * item.qty;
           final diff = itemTotalRaw - item.total;
           final double discountVal = diff > 0 ? diff.toDouble() : 0.0;
 
           return pw.TableRow(
-            decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300))),
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(color: PdfColors.grey300),
+              ),
+            ),
             children: [
-              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(item.name, style: const pw.TextStyle(fontSize: 9))),
-              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(item.batchNumber, style: const pw.TextStyle(fontSize: 9))),
-              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(item.qty.toString(), style: const pw.TextStyle(fontSize: 9), textAlign: pw.TextAlign.center)),
-              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('₹${item.mrp.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 9), textAlign: pw.TextAlign.right)),
-              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(discountVal > 0 ? '₹${discountVal.toStringAsFixed(2)}' : '0.00', style: const pw.TextStyle(fontSize: 9), textAlign: pw.TextAlign.right)),
-              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('${item.gst}%', style: const pw.TextStyle(fontSize: 9), textAlign: pw.TextAlign.right)),
-              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('₹${item.total.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 9), textAlign: pw.TextAlign.right)),
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  item.name,
+                  style: const pw.TextStyle(fontSize: 9),
+                ),
+              ),
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  item.qty.toString(),
+                  style: const pw.TextStyle(fontSize: 9),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  '₹${item.mrp.toStringAsFixed(2)}',
+                  style: const pw.TextStyle(fontSize: 9),
+                  textAlign: pw.TextAlign.right,
+                ),
+              ),
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  discountVal > 0
+                      ? '₹${discountVal.toStringAsFixed(2)}'
+                      : '0.00',
+                  style: const pw.TextStyle(fontSize: 9),
+                  textAlign: pw.TextAlign.right,
+                ),
+              ),
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  '${item.gst}%',
+                  style: const pw.TextStyle(fontSize: 9),
+                  textAlign: pw.TextAlign.right,
+                ),
+              ),
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  '₹${item.total.toStringAsFixed(2)}',
+                  style: const pw.TextStyle(fontSize: 9),
+                  textAlign: pw.TextAlign.right,
+                ),
+              ),
             ],
           );
         }),
@@ -285,7 +519,10 @@ class InvoicePrinter {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('Subtotal', style: const pw.TextStyle(fontSize: 11)),
-                  pw.Text('₹${invoice.subtotal.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 11)),
+                  pw.Text(
+                    '₹${invoice.subtotal.toStringAsFixed(2)}',
+                    style: const pw.TextStyle(fontSize: 11),
+                  ),
                 ],
               ),
               pw.SizedBox(height: 3),
@@ -293,8 +530,20 @@ class InvoicePrinter {
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('Discount', style: const pw.TextStyle(fontSize: 11, color: PdfColors.green)),
-                    pw.Text('-₹${invoice.discount.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 11, color: PdfColors.green)),
+                    pw.Text(
+                      'Discount',
+                      style: const pw.TextStyle(
+                        fontSize: 11,
+                        color: PdfColors.green,
+                      ),
+                    ),
+                    pw.Text(
+                      '-₹${invoice.discount.toStringAsFixed(2)}',
+                      style: const pw.TextStyle(
+                        fontSize: 11,
+                        color: PdfColors.green,
+                      ),
+                    ),
                   ],
                 ),
                 pw.SizedBox(height: 3),
@@ -303,7 +552,10 @@ class InvoicePrinter {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('CGST', style: const pw.TextStyle(fontSize: 11)),
-                  pw.Text('₹${cgst.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 11)),
+                  pw.Text(
+                    '₹${cgst.toStringAsFixed(2)}',
+                    style: const pw.TextStyle(fontSize: 11),
+                  ),
                 ],
               ),
               pw.SizedBox(height: 3),
@@ -311,18 +563,39 @@ class InvoicePrinter {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('SGST', style: const pw.TextStyle(fontSize: 11)),
-                  pw.Text('₹${sgst.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 11)),
+                  pw.Text(
+                    '₹${sgst.toStringAsFixed(2)}',
+                    style: const pw.TextStyle(fontSize: 11),
+                  ),
                 ],
               ),
               pw.SizedBox(height: 6),
               pw.Container(
-                decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 1))),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(
+                    top: pw.BorderSide(color: PdfColors.black, width: 1),
+                  ),
+                ),
                 padding: const pw.EdgeInsets.only(top: 6),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('TOTAL', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13, color: PdfColors.teal900)),
-                    pw.Text('₹${invoice.total.toStringAsFixed(2)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13, color: PdfColors.teal900)),
+                    pw.Text(
+                      'TOTAL',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 13,
+                        color: PdfColors.teal900,
+                      ),
+                    ),
+                    pw.Text(
+                      '₹${invoice.total.toStringAsFixed(2)}',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 13,
+                        color: PdfColors.teal900,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -345,7 +618,11 @@ class InvoicePrinter {
   // ==========================================
   // MODERN CORPORATE A4 LAYOUT
   // ==========================================
-  static pw.Widget _buildModernLayout(Invoice invoice, Map<String, dynamic>? metadata, String cleanNotes) {
+  static pw.Widget _buildModernLayout(
+    Invoice invoice,
+    Map<String, dynamic>? metadata,
+    String cleanNotes,
+  ) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
@@ -365,28 +642,45 @@ class InvoicePrinter {
                 children: [
                   pw.Text(
                     'VIYAN MEDASSIST',
-                    style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                    style: pw.TextStyle(
+                      fontSize: 22,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                    ),
                   ),
                   pw.SizedBox(height: 4),
                   pw.Text(
                     '123, Healthcare Street, Medical Hub, Bangalore',
-                    style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey400),
+                    style: const pw.TextStyle(
+                      fontSize: 9,
+                      color: PdfColors.grey400,
+                    ),
                   ),
                   pw.Text(
                     'GSTIN: 29ABCDE1234F1Z1 | Ph: +91 98765 43210',
-                    style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey400),
+                    style: const pw.TextStyle(
+                      fontSize: 9,
+                      color: PdfColors.grey400,
+                    ),
                   ),
                 ],
               ),
               pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: const pw.BoxDecoration(
                   color: PdfColor.fromInt(0xFF0F766E),
                   borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
                 ),
                 child: pw.Text(
                   'TAX INVOICE',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 11),
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.white,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ],
@@ -403,22 +697,57 @@ class InvoicePrinter {
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
                   color: PdfColors.grey50,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(6),
+                  ),
                   border: pw.Border.all(color: PdfColors.grey300),
                 ),
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('BILLED TO', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.teal700)),
+                    pw.Text(
+                      'BILLED TO',
+                      style: pw.TextStyle(
+                        fontSize: 9,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.teal700,
+                      ),
+                    ),
                     pw.SizedBox(height: 6),
-                    pw.Text(invoice.patientName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                    pw.Text(
+                      invoice.patientName,
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
                     pw.SizedBox(height: 2),
                     if (invoice.patientPhone.isNotEmpty)
-                      pw.Text('Ph: ${invoice.patientPhone}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey800)),
-                    if (metadata?['gstNumber'] != null && metadata!['gstNumber'].toString().isNotEmpty)
-                      pw.Text('GSTIN: ${metadata['gstNumber']}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey800)),
-                    if (metadata?['address'] != null && metadata!['address'].toString().isNotEmpty)
-                      pw.Text('Address: ${metadata['address']}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey800)),
+                      pw.Text(
+                        'Ph: ${invoice.patientPhone}',
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.grey800,
+                        ),
+                      ),
+                    if (metadata?['gstNumber'] != null &&
+                        metadata!['gstNumber'].toString().isNotEmpty)
+                      pw.Text(
+                        'GSTIN: ${metadata['gstNumber']}',
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.grey800,
+                        ),
+                      ),
+                    if (metadata?['address'] != null &&
+                        metadata!['address'].toString().isNotEmpty)
+                      pw.Text(
+                        'Address: ${metadata['address']}',
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.grey800,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -429,51 +758,127 @@ class InvoicePrinter {
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
                   color: PdfColors.grey50,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(6),
+                  ),
                   border: pw.Border.all(color: PdfColors.grey300),
                 ),
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('INVOICE INFO', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.teal700)),
+                    pw.Text(
+                      'INVOICE INFO',
+                      style: pw.TextStyle(
+                        fontSize: 9,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.teal700,
+                      ),
+                    ),
                     pw.SizedBox(height: 6),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Inv Number:', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-                        pw.Text(invoice.invoiceNumber, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        pw.Text(
+                          'Inv Number:',
+                          style: const pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
+                        pw.Text(
+                          invoice.invoiceNumber,
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Date:', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-                        pw.Text(invoice.date.split('T')[0], style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        pw.Text(
+                          'Date:',
+                          style: const pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
+                        pw.Text(
+                          invoice.date.split('T')[0],
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
-                    if (metadata?['dueDate'] != null && metadata!['dueDate'].toString().isNotEmpty)
+                    if (metadata?['dueDate'] != null &&
+                        metadata!['dueDate'].toString().isNotEmpty)
                       pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
-                          pw.Text('Due Date:', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-                          pw.Text(metadata['dueDate'].split('T')[0], style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                          pw.Text(
+                            'Due Date:',
+                            style: const pw.TextStyle(
+                              fontSize: 9,
+                              color: PdfColors.grey700,
+                            ),
+                          ),
+                          pw.Text(
+                            metadata['dueDate'].split('T')[0],
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Terms:', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-                        pw.Text(metadata?['paymentTerms'] ?? 'Cash', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        pw.Text(
+                          'Terms:',
+                          style: const pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
+                        pw.Text(
+                          metadata?['paymentTerms'] ?? 'Cash',
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     if (metadata != null &&
-                        ((metadata['doctorName'] != null && metadata['doctorName'].toString().isNotEmpty) ||
-                         (metadata['prescriptionNo'] != null && metadata['prescriptionNo'].toString().isNotEmpty))) ...[
+                        ((metadata['doctorName'] != null &&
+                                metadata['doctorName'].toString().isNotEmpty) ||
+                            (metadata['prescriptionNo'] != null &&
+                                metadata['prescriptionNo']
+                                    .toString()
+                                    .isNotEmpty))) ...[
                       pw.Divider(height: 12),
-                      if (metadata['doctorName'] != null && metadata['doctorName'].toString().isNotEmpty)
-                        pw.Text('Dr. ${metadata['doctorName']}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                      if (metadata['prescriptionNo'] != null && metadata['prescriptionNo'].toString().isNotEmpty)
-                        pw.Text('Rx: ${metadata['prescriptionNo']}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey800)),
+                      if (metadata['doctorName'] != null &&
+                          metadata['doctorName'].toString().isNotEmpty)
+                        pw.Text(
+                          'Dr. ${metadata['doctorName']}',
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      if (metadata['prescriptionNo'] != null &&
+                          metadata['prescriptionNo'].toString().isNotEmpty)
+                        pw.Text(
+                          'Rx: ${metadata['prescriptionNo']}',
+                          style: const pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey800,
+                          ),
+                        ),
                     ],
                   ],
                 ),
@@ -486,13 +891,12 @@ class InvoicePrinter {
         // Shaded alternate rows table
         pw.Table(
           columnWidths: const {
-            0: pw.FlexColumnWidth(3),
-            1: pw.FlexColumnWidth(1.5),
-            2: pw.FlexColumnWidth(0.8),
-            3: pw.FlexColumnWidth(1.2),
+            0: pw.FlexColumnWidth(4.5),
+            1: pw.FlexColumnWidth(0.8),
+            2: pw.FlexColumnWidth(1.2),
+            3: pw.FlexColumnWidth(1),
             4: pw.FlexColumnWidth(1),
-            5: pw.FlexColumnWidth(1),
-            6: pw.FlexColumnWidth(1.5),
+            5: pw.FlexColumnWidth(1.5),
           },
           children: [
             pw.TableRow(
@@ -500,16 +904,98 @@ class InvoicePrinter {
                 color: PdfColor.fromInt(0xFF0F172A),
               ),
               children: [
-                pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('Medicine', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white))),
-                pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('Batch', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white))),
-                pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('Qty', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white), textAlign: pw.TextAlign.center)),
-                pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('MRP', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white), textAlign: pw.TextAlign.right)),
-                pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('Disc', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white), textAlign: pw.TextAlign.right)),
-                pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('GST', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white), textAlign: pw.TextAlign.right)),
-                pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('Amount', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white), textAlign: pw.TextAlign.right)),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  child: pw.Text(
+                    'Medicine',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 9,
+                      color: PdfColors.white,
+                    ),
+                  ),
+                ),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  child: pw.Text(
+                    'Qty',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 9,
+                      color: PdfColors.white,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  child: pw.Text(
+                    'MRP',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 9,
+                      color: PdfColors.white,
+                    ),
+                    textAlign: pw.TextAlign.right,
+                  ),
+                ),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  child: pw.Text(
+                    'Disc',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 9,
+                      color: PdfColors.white,
+                    ),
+                    textAlign: pw.TextAlign.right,
+                  ),
+                ),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  child: pw.Text(
+                    'GST',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 9,
+                      color: PdfColors.white,
+                    ),
+                    textAlign: pw.TextAlign.right,
+                  ),
+                ),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  child: pw.Text(
+                    'Amount',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 9,
+                      color: PdfColors.white,
+                    ),
+                    textAlign: pw.TextAlign.right,
+                  ),
+                ),
               ],
             ),
-            ...invoice.items.asMap().entries.map((entry) {
+            ..._consolidateItems(invoice.items).asMap().entries.map((entry) {
               final idx = entry.key;
               final item = entry.value;
               final isEven = idx % 2 == 0;
@@ -520,16 +1006,85 @@ class InvoicePrinter {
               return pw.TableRow(
                 decoration: pw.BoxDecoration(
                   color: isEven ? PdfColors.white : PdfColors.grey50,
-                  border: const pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300)),
+                  border: const pw.Border(
+                    bottom: pw.BorderSide(color: PdfColors.grey300),
+                  ),
                 ),
                 children: [
-                  pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text(item.name, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
-                  pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text(item.batchNumber, style: const pw.TextStyle(fontSize: 8))),
-                  pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text(item.qty.toString(), style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center)),
-                  pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('₹${item.mrp.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right)),
-                  pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text(discountVal > 0 ? '₹${discountVal.toStringAsFixed(2)}' : '0.00', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right)),
-                  pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('${item.gst}%', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right)),
-                  pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: pw.Text('₹${item.total.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900), textAlign: pw.TextAlign.right)),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: pw.Text(
+                      item.name,
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: pw.Text(
+                      item.qty.toString(),
+                      style: const pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.center,
+                    ),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: pw.Text(
+                      '₹${item.mrp.toStringAsFixed(2)}',
+                      style: const pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: pw.Text(
+                      discountVal > 0
+                          ? '₹${discountVal.toStringAsFixed(2)}'
+                          : '0.00',
+                      style: const pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: pw.Text(
+                      '${item.gst}%',
+                      style: const pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: pw.Text(
+                      '₹${item.total.toStringAsFixed(2)}',
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.teal900,
+                      ),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
                 ],
               );
             }),
@@ -553,8 +1108,20 @@ class InvoicePrinter {
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Text('Subtotal', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey400)),
-                      pw.Text('₹${invoice.subtotal.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.white)),
+                      pw.Text(
+                        'Subtotal',
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.grey400,
+                        ),
+                      ),
+                      pw.Text(
+                        '₹${invoice.subtotal.toStringAsFixed(2)}',
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.white,
+                        ),
+                      ),
                     ],
                   ),
                   pw.SizedBox(height: 4),
@@ -562,8 +1129,21 @@ class InvoicePrinter {
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Discount', style: const pw.TextStyle(fontSize: 9, color: PdfColors.green300)),
-                        pw.Text('-₹${invoice.discount.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 9, color: PdfColors.green300, fontWeight: pw.FontWeight.bold)),
+                        pw.Text(
+                          'Discount',
+                          style: const pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.green300,
+                          ),
+                        ),
+                        pw.Text(
+                          '-₹${invoice.discount.toStringAsFixed(2)}',
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.green300,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     pw.SizedBox(height: 4),
@@ -571,16 +1151,42 @@ class InvoicePrinter {
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Text('GST Taxes', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey400)),
-                      pw.Text('₹${invoice.gst.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.white)),
+                      pw.Text(
+                        'GST Taxes',
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.grey400,
+                        ),
+                      ),
+                      pw.Text(
+                        '₹${invoice.gst.toStringAsFixed(2)}',
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.white,
+                        ),
+                      ),
                     ],
                   ),
                   pw.Divider(height: 12, color: PdfColors.grey800),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Text('TOTAL DUE', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.white)),
-                      pw.Text('₹${invoice.total.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.teal300)),
+                      pw.Text(
+                        'TOTAL DUE',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                      pw.Text(
+                        '₹${invoice.total.toStringAsFixed(2)}',
+                        style: pw.TextStyle(
+                          fontSize: 11,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.teal300,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -590,7 +1196,10 @@ class InvoicePrinter {
         ),
         if (cleanNotes.isNotEmpty) ...[
           pw.SizedBox(height: 20),
-          pw.Text('Notes: $cleanNotes', style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic)),
+          pw.Text(
+            'Notes: $cleanNotes',
+            style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic),
+          ),
         ],
         pw.Spacer(),
         pw.Center(
@@ -606,7 +1215,10 @@ class InvoicePrinter {
   // ==========================================
   // THERMAL POS RECEIPT LAYOUT
   // ==========================================
-  static pw.Widget _buildThermalLayout(Invoice invoice, Map<String, dynamic>? metadata) {
+  static pw.Widget _buildThermalLayout(
+    Invoice invoice,
+    Map<String, dynamic>? metadata,
+  ) {
     final payTerms = metadata?['paymentTerms'] ?? 'Cash';
     final docName = metadata?['doctorName'] ?? '';
 
@@ -620,13 +1232,22 @@ class InvoicePrinter {
           ),
         ),
         pw.Center(
-          child: pw.Text('123, Healthcare Street, Medical Hub', style: const pw.TextStyle(fontSize: 8)),
+          child: pw.Text(
+            '123, Healthcare Street, Medical Hub',
+            style: const pw.TextStyle(fontSize: 8),
+          ),
         ),
         pw.Center(
-          child: pw.Text('Ph: +91 98765 43210 | GSTIN: 29ABCDE1234F1Z1', style: const pw.TextStyle(fontSize: 7)),
+          child: pw.Text(
+            'Ph: +91 98765 43210 | GSTIN: 29ABCDE1234F1Z1',
+            style: const pw.TextStyle(fontSize: 7),
+          ),
         ),
         pw.SizedBox(height: 8),
-        pw.Text('---------------------------------------------', style: const pw.TextStyle(fontSize: 8)),
+        pw.Text(
+          '---------------------------------------------',
+          style: const pw.TextStyle(fontSize: 8),
+        ),
         pw.SizedBox(height: 4),
 
         pw.Text(
@@ -640,7 +1261,10 @@ class InvoicePrinter {
           pw.Text('DOC: Dr. $docName', style: const pw.TextStyle(fontSize: 8)),
 
         pw.SizedBox(height: 4),
-        pw.Text('---------------------------------------------', style: const pw.TextStyle(fontSize: 8)),
+        pw.Text(
+          '---------------------------------------------',
+          style: const pw.TextStyle(fontSize: 8),
+        ),
         pw.SizedBox(height: 4),
 
         // Compact table
@@ -653,32 +1277,81 @@ class InvoicePrinter {
           },
           children: [
             pw.TableRow(
-              decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400))),
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(
+                  bottom: pw.BorderSide(color: PdfColors.grey400),
+                ),
+              ),
               children: [
-                pw.Text('Item', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
-                pw.Text('Qty', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8), textAlign: pw.TextAlign.center),
-                pw.Text('MRP', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8), textAlign: pw.TextAlign.right),
-                pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8), textAlign: pw.TextAlign.right),
+                pw.Text(
+                  'Item',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 8,
+                  ),
+                ),
+                pw.Text(
+                  'Qty',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 8,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+                pw.Text(
+                  'MRP',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 8,
+                  ),
+                  textAlign: pw.TextAlign.right,
+                ),
+                pw.Text(
+                  'Total',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 8,
+                  ),
+                  textAlign: pw.TextAlign.right,
+                ),
               ],
             ),
-            ...invoice.items.map((item) {
+            ..._consolidateItems(invoice.items).map((item) {
               return pw.TableRow(
                 children: [
                   pw.Padding(
                     padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                    child: pw.Text(item.name, style: const pw.TextStyle(fontSize: 7)),
+                    child: pw.Text(
+                      item.name,
+                      style: const pw.TextStyle(fontSize: 7),
+                    ),
                   ),
                   pw.Padding(
                     padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                    child: pw.Text(item.qty.toString(), style: const pw.TextStyle(fontSize: 7), textAlign: pw.TextAlign.center),
+                    child: pw.Text(
+                      item.qty.toString(),
+                      style: const pw.TextStyle(fontSize: 7),
+                      textAlign: pw.TextAlign.center,
+                    ),
                   ),
                   pw.Padding(
                     padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                    child: pw.Text('₹${item.mrp.toStringAsFixed(1)}', style: const pw.TextStyle(fontSize: 7), textAlign: pw.TextAlign.right),
+                    child: pw.Text(
+                      '₹${item.mrp.toStringAsFixed(1)}',
+                      style: const pw.TextStyle(fontSize: 7),
+                      textAlign: pw.TextAlign.right,
+                    ),
                   ),
                   pw.Padding(
                     padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                    child: pw.Text('₹${item.total.toStringAsFixed(1)}', style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right),
+                    child: pw.Text(
+                      '₹${item.total.toStringAsFixed(1)}',
+                      style: pw.TextStyle(
+                        fontSize: 7,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                      textAlign: pw.TextAlign.right,
+                    ),
                   ),
                 ],
               );
@@ -687,7 +1360,10 @@ class InvoicePrinter {
         ),
 
         pw.SizedBox(height: 4),
-        pw.Text('---------------------------------------------', style: const pw.TextStyle(fontSize: 8)),
+        pw.Text(
+          '---------------------------------------------',
+          style: const pw.TextStyle(fontSize: 8),
+        ),
         pw.SizedBox(height: 4),
 
         // Calculations
@@ -695,35 +1371,56 @@ class InvoicePrinter {
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text('Subtotal:', style: const pw.TextStyle(fontSize: 8)),
-            pw.Text('₹${invoice.subtotal.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 8)),
+            pw.Text(
+              '₹${invoice.subtotal.toStringAsFixed(2)}',
+              style: const pw.TextStyle(fontSize: 8),
+            ),
           ],
         ),
         if (invoice.discount > 0)
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('Discount:', style: const pw.TextStyle(fontSize: 8, color: PdfColors.green)),
-              pw.Text('-₹${invoice.discount.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 8, color: PdfColors.green)),
+              pw.Text(
+                'Discount:',
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.green),
+              ),
+              pw.Text(
+                '-₹${invoice.discount.toStringAsFixed(2)}',
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.green),
+              ),
             ],
           ),
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text('GST Taxes:', style: const pw.TextStyle(fontSize: 8)),
-            pw.Text('₹${invoice.gst.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 8)),
+            pw.Text(
+              '₹${invoice.gst.toStringAsFixed(2)}',
+              style: const pw.TextStyle(fontSize: 8),
+            ),
           ],
         ),
         pw.SizedBox(height: 2),
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('TOTAL AMOUNT:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-            pw.Text('₹${invoice.total.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            pw.Text(
+              'TOTAL AMOUNT:',
+              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.Text(
+              '₹${invoice.total.toStringAsFixed(2)}',
+              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+            ),
           ],
         ),
 
         pw.SizedBox(height: 8),
-        pw.Text('---------------------------------------------', style: const pw.TextStyle(fontSize: 8)),
+        pw.Text(
+          '---------------------------------------------',
+          style: const pw.TextStyle(fontSize: 8),
+        ),
         pw.SizedBox(height: 10),
 
         // NATIVE CODE 128 BARCODE
@@ -740,7 +1437,10 @@ class InvoicePrinter {
         ),
         pw.SizedBox(height: 3),
         pw.Center(
-          child: pw.Text('*${invoice.invoiceNumber}*', style: const pw.TextStyle(fontSize: 7)),
+          child: pw.Text(
+            '*${invoice.invoiceNumber}*',
+            style: const pw.TextStyle(fontSize: 7),
+          ),
         ),
 
         pw.SizedBox(height: 16),

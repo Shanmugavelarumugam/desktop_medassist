@@ -1,10 +1,10 @@
 import '../../domain/models/medicine.dart';
 
 abstract class InventoryRepository {
-  Future<List<Medicine>> getMedicines();
+  Future<List<Medicine>> getMedicines({String? search, int? limit});
   Future<List<MedicineCategory>> getCategories();
   Future<List<Manufacturer>> getManufacturers();
-  
+
   Future<Medicine> createMedicine({
     required String name,
     required String genericName,
@@ -40,6 +40,8 @@ abstract class InventoryRepository {
   });
 
   Future<void> deleteMedicine({required String id});
+
+  Future<Map<String, dynamic>> getSummary();
 
   Future<void> addBatch({
     required String medicineId,

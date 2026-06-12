@@ -75,10 +75,12 @@ class InvoiceTemplateSelectorDialog extends ConsumerStatefulWidget {
   const InvoiceTemplateSelectorDialog({super.key});
 
   @override
-  ConsumerState<InvoiceTemplateSelectorDialog> createState() => _InvoiceTemplateSelectorDialogState();
+  ConsumerState<InvoiceTemplateSelectorDialog> createState() =>
+      _InvoiceTemplateSelectorDialogState();
 }
 
-class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateSelectorDialog> {
+class _InvoiceTemplateSelectorDialogState
+    extends ConsumerState<InvoiceTemplateSelectorDialog> {
   late String _selectedTemplateId;
 
   @override
@@ -89,17 +91,17 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
 
   @override
   Widget build(BuildContext context) {
-    final activeTemplate = templates.firstWhere((t) => t.id == _selectedTemplateId, orElse: () => templates.first);
+    final activeTemplate = templates.firstWhere(
+      (t) => t.id == _selectedTemplateId,
+      orElse: () => templates.first,
+    );
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
       backgroundColor: const Color(0xFFF8FAFC),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 1100,
-          maxHeight: 750,
-        ),
+        constraints: const BoxConstraints(maxWidth: 1100, maxHeight: 750),
         child: Column(
           children: [
             // 1. Header
@@ -113,18 +115,29 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.dashboard_customize_rounded, color: Color(0xFFBE185D), size: 22),
+                          const Icon(
+                            Icons.dashboard_customize_rounded,
+                            color: Color(0xFFBE185D),
+                            size: 22,
+                          ),
                           const SizedBox(width: 8),
                           const Text(
                             'Choose Invoice Template',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       const Text(
                         'Select the visual design for generated PDF and physical prints. Select one of 6 unique layouts.',
-                        style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                     ],
                   ),
@@ -146,12 +159,13 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                     flex: 4,
                     child: GridView.builder(
                       padding: const EdgeInsets.all(24),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.25,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 1.25,
+                          ),
                       itemCount: templates.length,
                       itemBuilder: (context, index) {
                         final template = templates[index];
@@ -175,11 +189,20 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.remove_red_eye_outlined, size: 14, color: Color(0xFF64748B)),
+                              Icon(
+                                Icons.remove_red_eye_outlined,
+                                size: 14,
+                                color: Color(0xFF64748B),
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'LIVE INSTANT PREVIEW',
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF64748B),
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ],
                           ),
@@ -189,10 +212,14 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                               child: Card(
                                 elevation: 4,
                                 shadowColor: Colors.black12,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                                 color: Colors.white,
                                 child: Container(
-                                  width: activeTemplate.id == 'thermal' ? 320 : double.infinity,
+                                  width: activeTemplate.id == 'thermal'
+                                      ? 320
+                                      : double.infinity,
                                   padding: const EdgeInsets.all(24),
                                   child: _buildPreviewLayout(activeTemplate),
                                 ),
@@ -217,25 +244,46 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                   OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Color(0xFF475569),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: () {
-                      ref.read(activeTemplateProvider.notifier).setTemplate(_selectedTemplateId);
+                      ref
+                          .read(activeTemplateProvider.notifier)
+                          .setTemplate(_selectedTemplateId);
                       Navigator.of(context).pop();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0F172A),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       elevation: 0,
                     ),
-                    child: const Text('Set as Active Template', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Set as Active Template',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -259,11 +307,19 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? const Color(0xFF1E3A8A)
+                : const Color(0xFFE2E8F0),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
-              ? [const BoxShadow(color: Color(0x0F1E3A8A), blurRadius: 8, offset: Offset(0, 4))]
+              ? [
+                  const BoxShadow(
+                    color: Color(0x0F1E3A8A),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ]
               : [],
         ),
         padding: const EdgeInsets.all(12),
@@ -293,11 +349,18 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                     children: [
                       Text(
                         template.name,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                       Text(
                         template.subtitle,
-                        style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                     ],
                   ),
@@ -309,7 +372,11 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                       color: Color(0xFF1E3A8A),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check, size: 10, color: Colors.white),
+                    child: const Icon(
+                      Icons.check,
+                      size: 10,
+                      color: Colors.white,
+                    ),
                   ),
               ],
             ),
@@ -336,7 +403,15 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
               const SizedBox(height: 3),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(10, (idx) => Container(width: 2, height: 10, color: Colors.black, margin: const EdgeInsets.symmetric(horizontal: 0.5))),
+                children: List.generate(
+                  10,
+                  (idx) => Container(
+                    width: 2,
+                    height: 10,
+                    color: Colors.black,
+                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                  ),
+                ),
               ),
             ],
           ),
@@ -362,18 +437,21 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
         // Item rows mock
         Expanded(
           child: Column(
-            children: List.generate(3, (index) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                children: [
-                  Container(height: 2, width: 20, color: Colors.grey[200]),
-                  const Spacer(),
-                  Container(height: 2, width: 6, color: Colors.grey[200]),
-                  const SizedBox(width: 4),
-                  Container(height: 2, width: 6, color: Colors.grey[200]),
-                ],
+            children: List.generate(
+              3,
+              (index) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Container(height: 2, width: 20, color: Colors.grey[200]),
+                    const Spacer(),
+                    Container(height: 2, width: 6, color: Colors.grey[200]),
+                    const SizedBox(width: 4),
+                    Container(height: 2, width: 6, color: Colors.grey[200]),
+                  ],
+                ),
               ),
-            )),
+            ),
           ),
         ),
         // Bottom total
@@ -395,17 +473,30 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
           const Center(
             child: Text(
               'VIYAN MEDASSIST',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
+              ),
             ),
           ),
           Center(
-            child: Text('123, Healthcare Street, Medical Hub', style: TextStyle(fontSize: 8, color: Colors.grey[600])),
+            child: Text(
+              '123, Healthcare Street, Medical Hub',
+              style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+            ),
           ),
           Center(
-            child: Text('Ph: +91 98765 43210 | GSTIN: 29ABCDE1234F1Z1', style: TextStyle(fontSize: 8, color: Colors.grey[600])),
+            child: Text(
+              'Ph: +91 98765 43210 | GSTIN: 29ABCDE1234F1Z1',
+              style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+            ),
           ),
           const SizedBox(height: 8),
-          const Text('--------------------------------------------', style: TextStyle(fontSize: 8, color: Colors.grey)),
+          const Text(
+            '--------------------------------------------',
+            style: TextStyle(fontSize: 8, color: Colors.grey),
+          ),
           const SizedBox(height: 4),
           const Text(
             'INV: INV-SAMPLE-001\n'
@@ -414,7 +505,10 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
             style: TextStyle(fontSize: 8, fontFamily: 'monospace', height: 1.3),
           ),
           const SizedBox(height: 4),
-          const Text('--------------------------------------------', style: TextStyle(fontSize: 8, color: Colors.grey)),
+          const Text(
+            '--------------------------------------------',
+            style: TextStyle(fontSize: 8, color: Colors.grey),
+          ),
           const SizedBox(height: 4),
           Table(
             columnWidths: const {
@@ -425,64 +519,132 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
             children: const [
               TableRow(
                 children: [
-                  Text('Item', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8)),
-                  Text('Qty', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8), textAlign: TextAlign.center),
-                  Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8), textAlign: TextAlign.right),
+                  Text(
+                    'Item',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8),
+                  ),
+                  Text(
+                    'Qty',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8),
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    'Total',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8),
+                    textAlign: TextAlign.right,
+                  ),
                 ],
               ),
               TableRow(
                 children: [
-                  Text('Atorvastatin 10mg', style: TextStyle(fontSize: 7, fontFamily: 'monospace')),
-                  Text('2', style: TextStyle(fontSize: 7, fontFamily: 'monospace'), textAlign: TextAlign.center),
-                  Text('₹295.72', style: TextStyle(fontSize: 7, fontFamily: 'monospace'), textAlign: TextAlign.right),
+                  Text(
+                    'Atorvastatin 10mg',
+                    style: TextStyle(fontSize: 7, fontFamily: 'monospace'),
+                  ),
+                  Text(
+                    '2',
+                    style: TextStyle(fontSize: 7, fontFamily: 'monospace'),
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    '₹295.72',
+                    style: TextStyle(fontSize: 7, fontFamily: 'monospace'),
+                    textAlign: TextAlign.right,
+                  ),
                 ],
               ),
               TableRow(
                 children: [
-                  Text('Azee 500 Tablets', style: TextStyle(fontSize: 7, fontFamily: 'monospace')),
-                  Text('1', style: TextStyle(fontSize: 7, fontFamily: 'monospace'), textAlign: TextAlign.center),
-                  Text('₹584.15', style: TextStyle(fontSize: 7, fontFamily: 'monospace'), textAlign: TextAlign.right),
+                  Text(
+                    'Azee 500 Tablets',
+                    style: TextStyle(fontSize: 7, fontFamily: 'monospace'),
+                  ),
+                  Text(
+                    '1',
+                    style: TextStyle(fontSize: 7, fontFamily: 'monospace'),
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    '₹584.15',
+                    style: TextStyle(fontSize: 7, fontFamily: 'monospace'),
+                    textAlign: TextAlign.right,
+                  ),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 4),
-          const Text('--------------------------------------------', style: TextStyle(fontSize: 8, color: Colors.grey)),
+          const Text(
+            '--------------------------------------------',
+            style: TextStyle(fontSize: 8, color: Colors.grey),
+          ),
           const SizedBox(height: 4),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Subtotal:', style: TextStyle(fontSize: 8, fontFamily: 'monospace')),
-              Text('₹785.60', style: TextStyle(fontSize: 8, fontFamily: 'monospace')),
+              Text(
+                'Subtotal:',
+                style: TextStyle(fontSize: 8, fontFamily: 'monospace'),
+              ),
+              Text(
+                '₹785.60',
+                style: TextStyle(fontSize: 8, fontFamily: 'monospace'),
+              ),
             ],
           ),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('GST (12%):', style: TextStyle(fontSize: 8, fontFamily: 'monospace')),
-              Text('₹94.27', style: TextStyle(fontSize: 8, fontFamily: 'monospace')),
+              Text(
+                'GST (12%):',
+                style: TextStyle(fontSize: 8, fontFamily: 'monospace'),
+              ),
+              Text(
+                '₹94.27',
+                style: TextStyle(fontSize: 8, fontFamily: 'monospace'),
+              ),
             ],
           ),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('TOTAL AMOUNT:', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-              Text('₹879.87', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+              Text(
+                'TOTAL AMOUNT:',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              Text(
+                '₹879.87',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(24, (index) => Container(
-              width: (index % 4 == 0 || index % 5 == 0) ? 3.0 : 1.5,
-              height: 26,
-              color: Colors.black,
-              margin: const EdgeInsets.symmetric(horizontal: 1),
-            )),
+            children: List.generate(
+              24,
+              (index) => Container(
+                width: (index % 4 == 0 || index % 5 == 0) ? 3.0 : 1.5,
+                height: 26,
+                color: Colors.black,
+                margin: const EdgeInsets.symmetric(horizontal: 1),
+              ),
+            ),
           ),
           const SizedBox(height: 4),
           const Center(
-            child: Text('*INV-SAMPLE-001*', style: TextStyle(fontSize: 7, fontFamily: 'monospace')),
+            child: Text(
+              '*INV-SAMPLE-001*',
+              style: TextStyle(fontSize: 7, fontFamily: 'monospace'),
+            ),
           ),
         ],
       );
@@ -515,7 +677,11 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                       child: const Center(
                         child: Text(
                           'h',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
                       ),
                     ),
@@ -525,11 +691,18 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                       children: [
                         const Text(
                           'HARI45',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                         Text(
                           'Global Solutions Enterprise',
-                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
@@ -538,7 +711,11 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                 const SizedBox(height: 16),
                 const Text(
                   'GSTIN: N/A\nEMAIL: hari45@bnxmail.com',
-                  style: TextStyle(fontSize: 9, height: 1.4, color: Color(0xFF334155)),
+                  style: TextStyle(
+                    fontSize: 9,
+                    height: 1.4,
+                    color: Color(0xFF334155),
+                  ),
                 ),
               ],
             ),
@@ -551,11 +728,31 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('INVOICE NO.', style: TextStyle(fontSize: 8, color: Color(0xFF64748B))),
-                  const Text('INV-SAMPLE-001', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  const Text(
+                    'INVOICE NO.',
+                    style: TextStyle(fontSize: 8, color: Color(0xFF64748B)),
+                  ),
+                  const Text(
+                    'INV-SAMPLE-001',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  const Text('DATE ISSUED', style: TextStyle(fontSize: 8, color: Color(0xFF64748B))),
-                  const Text('6/5/2026', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  const Text(
+                    'DATE ISSUED',
+                    style: TextStyle(fontSize: 8, color: Color(0xFF64748B)),
+                  ),
+                  const Text(
+                    '6/5/2026',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -572,16 +769,39 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  border: Border(left: BorderSide(color: template.primaryColor, width: 3)),
+                  border: Border(
+                    left: BorderSide(color: template.primaryColor, width: 3),
+                  ),
                 ),
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('BILL RECIPIENT', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    Text(
+                      'BILL RECIPIENT',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
                     SizedBox(height: 6),
-                    Text('Johnathan Doe Ltd.', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    Text(
+                      'Johnathan Doe Ltd.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
                     SizedBox(height: 2),
-                    Text('742 Evergreen Terrace,\nSpringfield, US', style: TextStyle(fontSize: 9, color: Color(0xFF475569), height: 1.3)),
+                    Text(
+                      '742 Evergreen Terrace,\nSpringfield, US',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: Color(0xFF475569),
+                        height: 1.3,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -598,11 +818,28 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('PAYMENT MODE', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    Text(
+                      'PAYMENT MODE',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
                     SizedBox(height: 6),
-                    Text('UPI / Credit Card', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    Text(
+                      'UPI / Credit Card',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
                     SizedBox(height: 2),
-                    Text('Terms: Net 30', style: TextStyle(fontSize: 8, color: Color(0xFF64748B))),
+                    Text(
+                      'Terms: Net 30',
+                      style: TextStyle(fontSize: 8, color: Color(0xFF64748B)),
+                    ),
                   ],
                 ),
               ),
@@ -619,11 +856,28 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('CURRENCY', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    const Text(
+                      'CURRENCY',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
                     const SizedBox(height: 6),
-                    Text('INR (₹)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: template.primaryColor)),
+                    Text(
+                      'INR (₹)',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: template.primaryColor,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    const Text('Indian Rupee', style: TextStyle(fontSize: 8, color: Color(0xFF64748B))),
+                    const Text(
+                      'Indian Rupee',
+                      style: TextStyle(fontSize: 8, color: Color(0xFF64748B)),
+                    ),
                   ],
                 ),
               ),
@@ -643,31 +897,142 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
           children: [
             TableRow(
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: template.primaryColor, width: 1.5)),
+                border: Border(
+                  bottom: BorderSide(color: template.primaryColor, width: 1.5),
+                ),
               ),
               children: const [
-                Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('Service / Item', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Color(0xFF64748B)))),
-                Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('Qty', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Color(0xFF64748B)), textAlign: TextAlign.center)),
-                Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('Rate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Color(0xFF64748B)), textAlign: TextAlign.right)),
-                Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Color(0xFF64748B)), textAlign: TextAlign.right)),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    'Service / Item',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    'Qty',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Color(0xFF64748B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    'Rate',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Color(0xFF64748B),
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    'Amount',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Color(0xFF64748B),
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
               ],
             ),
             TableRow(
-              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+              ),
               children: [
-                Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text('Consulting & System Design', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey[800]))),
-                const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('10', style: TextStyle(fontSize: 8), textAlign: TextAlign.center)),
-                const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('₹1,500.00', style: TextStyle(fontSize: 8), textAlign: TextAlign.right)),
-                const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('₹15,000.00', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.right)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    'Consulting & System Design',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    '10',
+                    style: TextStyle(fontSize: 8),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    '₹1,500.00',
+                    style: TextStyle(fontSize: 8),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    '₹15,000.00',
+                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
               ],
             ),
             TableRow(
-              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+              ),
               children: [
-                Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text('Annual Maintenance Contract (AMC)', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey[800]))),
-                const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('1', style: TextStyle(fontSize: 8), textAlign: TextAlign.center)),
-                const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('₹4,500.00', style: TextStyle(fontSize: 8), textAlign: TextAlign.right)),
-                const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Text('₹4,500.00', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.right)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    'Annual Maintenance Contract (AMC)',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    '1',
+                    style: TextStyle(fontSize: 8),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    '₹4,500.00',
+                    style: TextStyle(fontSize: 8),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    '₹4,500.00',
+                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
               ],
             ),
           ],
@@ -685,24 +1050,58 @@ class _InvoiceTemplateSelectorDialogState extends ConsumerState<InvoiceTemplateS
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Subtotal:', style: TextStyle(fontSize: 9, color: Color(0xFF64748B))),
-                      const Text('₹19,500.00', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                      const Text(
+                        'Subtotal:',
+                        style: TextStyle(fontSize: 9, color: Color(0xFF64748B)),
+                      ),
+                      const Text(
+                        '₹19,500.00',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Tax (GST 18%):', style: TextStyle(fontSize: 9, color: Color(0xFF64748B))),
-                      const Text('₹3,510.00', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                      const Text(
+                        'Tax (GST 18%):',
+                        style: TextStyle(fontSize: 9, color: Color(0xFF64748B)),
+                      ),
+                      const Text(
+                        '₹3,510.00',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
                     ],
                   ),
                   const Divider(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total Due:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                      Text('₹23,010.00', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: template.primaryColor)),
+                      const Text(
+                        'Total Due:',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      Text(
+                        '₹23,010.00',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: template.primaryColor,
+                        ),
+                      ),
                     ],
                   ),
                 ],

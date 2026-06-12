@@ -9,19 +9,23 @@ import '../../../inventory/presentation/notifier/inventory_notifier.dart';
 import '../../domain/models/invoice.dart';
 
 class BillingNotifier extends Notifier<BillingState> {
-  late final BillingRepository _repository;
+  final Map<String, List<MedicineBatch>> _batchesCache = {};
+  late BillingRepository _repository;
 
   @override
   BillingState build() {
     _repository = ref.watch(billingRepositoryProvider);
     Future.microtask(() {
-      loadInvoices();
-      loadAnalytics();
+      Future.wait([loadInvoices(), loadAnalytics()]);
     });
     return const BillingState();
   }
 
-  Future<void> loadInvoices() async {
+  Future<void> loadInvoices({bool forceRefresh = false}) async {
+    if (state.isLoading) return;
+    if (!forceRefresh && state.invoices.isNotEmpty) {
+      return;
+    }
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       debugPrint('===== API CALL: GET INVOICES =====');
@@ -119,6 +123,85 @@ class BillingNotifier extends Notifier<BillingState> {
     );
   }
 
+  Future<void> updateMedicineTotalQuantity(
+    String medicineId,
+    int desiredTotalQty,
+  ) async {
+    final cartItemIndex = state.cartItems.indexWhere(
+      (x) => x.medicine.id == medicineId,
+    );
+    if (cartItemIndex < 0) return;
+
+    final targetItem = state.cartItems[cartItemIndex];
+    final medicine = targetItem.medicine;
+
+    if (desiredTotalQty <= 0) {
+      final otherMedicinesItems = state.cartItems
+          .where((x) => x.medicine.id != medicineId)
+          .toList();
+      state = state.copyWith(cartItems: otherMedicinesItems);
+      return;
+    }
+
+    // Fetch and sort active batches
+    final batches = await fetchBatches(medicineId);
+    var validBatches = batches
+        .where((b) => b.medicineId == medicineId && b.availableQuantity > 0)
+        .toList();
+
+    validBatches.sort((a, b) {
+      final aExp = DateTime.tryParse(a.expiryDate) ?? DateTime(9999);
+      final bExp = DateTime.tryParse(b.expiryDate) ?? DateTime(9999);
+      return aExp.compareTo(bExp);
+    });
+
+    final totalStock = validBatches.fold(
+      0,
+      (sum, b) => sum + b.availableQuantity,
+    );
+    final finalTotalQty = desiredTotalQty > totalStock
+        ? totalStock
+        : desiredTotalQty;
+
+    // Allocate finalTotalQty
+    int remaining = finalTotalQty;
+    final Map<String, int> allocations = {};
+    for (final batch in validBatches) {
+      if (remaining <= 0) break;
+      final alloc = remaining > batch.availableQuantity
+          ? batch.availableQuantity
+          : remaining;
+      allocations[batch.id] = alloc;
+      remaining -= alloc;
+    }
+
+    // Rebuild cart items
+    final otherMedicinesItems = state.cartItems
+        .where((x) => x.medicine.id != medicineId)
+        .toList();
+    final List<CartItem> newCartItems = [...otherMedicinesItems];
+
+    for (final entry in allocations.entries) {
+      final batchId = entry.key;
+      final qty = entry.value;
+      final batch = validBatches.firstWhere((b) => b.id == batchId);
+
+      newCartItems.add(
+        CartItem(
+          medicine: medicine,
+          batchId: batch.id,
+          batchNumber: batch.batchNumber,
+          mrp: double.tryParse(batch.mrp.toString()) ?? medicine.mrp,
+          quantity: qty,
+          availableStock: batch.availableQuantity,
+          expiryDate: batch.expiryDate,
+        ),
+      );
+    }
+
+    state = state.copyWith(cartItems: newCartItems);
+  }
+
   void setDiscount(double discount) {
     state = state.copyWith(discount: discount < 0 ? 0 : discount);
   }
@@ -128,6 +211,7 @@ class BillingNotifier extends Notifier<BillingState> {
   }
 
   void clearCart() {
+    _batchesCache.clear();
     state = state.copyWith(
       cartItems: [],
       discount: 0.0,
@@ -137,14 +221,14 @@ class BillingNotifier extends Notifier<BillingState> {
     );
   }
 
-  Future<bool> checkoutCart({
+  Future<Invoice?> checkoutCart({
     required String patientName,
     required String patientPhone,
     String notes = '',
   }) async {
     if (state.cartItems.isEmpty) {
       state = state.copyWith(errorMessage: 'Cart is empty');
-      return false;
+      return null;
     }
 
     state = state.copyWith(
@@ -177,15 +261,16 @@ class BillingNotifier extends Notifier<BillingState> {
       }
 
       final paymentsPayload = [
-        {
-          'paymentMode': state.paymentMethod,
-          'amount': state.cartTotal,
-        }
+        {'paymentMode': state.paymentMethod, 'amount': state.cartTotal},
       ];
 
       final payload = {
-        'patientName': patientName.trim().isEmpty ? 'Walk-in Customer' : patientName.trim(),
-        'patientPhone': patientPhone.trim().isEmpty ? '9876543210' : patientPhone.trim(),
+        'patientName': patientName.trim().isEmpty
+            ? 'Walk-in Customer'
+            : patientName.trim(),
+        'patientPhone': patientPhone.trim().isEmpty
+            ? '9876543210'
+            : patientPhone.trim(),
         'discountAmount': state.discount,
         'discountPercentage': 0,
         'paymentMode': state.paymentMethod,
@@ -214,12 +299,30 @@ class BillingNotifier extends Notifier<BillingState> {
       debugPrint('Response GST: ${invoice.gst}');
       debugPrint('Response Total: ${invoice.total}');
 
-      // Refresh inventory stock amounts so the main screen updates instantly!
-      ref.read(inventoryNotifierProvider.notifier).loadInventory();
+      // ── Cache Invalidation ──────────────────────────────────────────────────
+      // Stock was just deducted in the backend.
+      // 1. Clear the local batch cache.
+      _batchesCache.clear();
+      debugPrint('===== BATCH CACHE CLEARED (post-checkout) =====');
 
-      // Reload billing list and analytics
-      await loadInvoices();
-      await loadAnalytics();
+      // 2. Invalidate the Riverpod inventory provider so keepAlive screens
+      //    are forced to rebuild with fresh state, not stale cached medicines.
+      ref.invalidate(inventoryNotifierProvider);
+      debugPrint('===== INVENTORY PROVIDER INVALIDATED (post-checkout) =====');
+
+      // Wait one frame/tick for the invalidation/disposal to process
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // 3. Await a fresh inventory load so medicines are ready before the
+      //    billing screen repaints.
+      await ref
+          .read(inventoryNotifierProvider.notifier)
+          .loadInventory(forceRefresh: true);
+      debugPrint('===== INVENTORY RELOADED (post-checkout) =====');
+
+      // 4. Reload billing invoices and analytics.
+      await loadInvoices(forceRefresh: true);
+      await loadAnalytics(forceRefresh: true);
 
       state = state.copyWith(
         cartItems: [], // clear cart upon success
@@ -227,7 +330,8 @@ class BillingNotifier extends Notifier<BillingState> {
         lastCreatedInvoice: invoice,
         isLoading: false,
       );
-      return true;
+
+      return invoice;
     } catch (e) {
       debugPrint('===== API ERROR =====');
       debugPrint(e.toString());
@@ -235,16 +339,49 @@ class BillingNotifier extends Notifier<BillingState> {
         isLoading: false,
         errorMessage: e.toString().replaceFirst('Exception: ', ''),
       );
-      return false;
+      return null;
     }
   }
 
-  Future<List<MedicineBatch>> fetchBatches(String medicineId) async {
+  Future<List<MedicineBatch>> fetchBatches(
+    String medicineId, {
+    bool forceRefresh = false,
+  }) async {
+    // Serve from local cache unless a force-refresh is requested.
+    if (!forceRefresh && _batchesCache.containsKey(medicineId)) {
+      debugPrint('===== BATCHES CACHE HIT (medId: $medicineId) =====');
+      return _batchesCache[medicineId]!;
+    }
+
+    // Remove any stale entry so we don't accidentally serve it below.
+    _batchesCache.remove(medicineId);
+
+    // Only fall back to the inventory model cache when NOT force-refreshing.
+    // After an invoice the inventory state has been invalidated and reloaded,
+    // so this path would serve the freshly loaded batches correctly.
+    if (!forceRefresh) {
+      final inventoryState = ref.read(inventoryNotifierProvider);
+      final medIndex = inventoryState.medicines.indexWhere(
+        (m) => m.id == medicineId,
+      );
+      if (medIndex >= 0) {
+        final med = inventoryState.medicines[medIndex];
+        if (med.inventoryBatches != null && med.inventoryBatches!.isNotEmpty) {
+          debugPrint(
+            '===== BATCHES FROM INVENTORY MODEL (medId: $medicineId) =====',
+          );
+          _batchesCache[medicineId] = med.inventoryBatches!;
+          return med.inventoryBatches!;
+        }
+      }
+    }
+
     try {
       debugPrint('===== API CALL: GET BATCHES (medId: $medicineId) =====');
       final batches = await _repository.getBatches(medicineId);
       debugPrint('===== API SUCCESS: GET BATCHES =====');
       debugPrint('Loaded ${batches.length} batches');
+      _batchesCache[medicineId] = batches;
       return batches;
     } catch (e) {
       debugPrint('===== API ERROR: GET BATCHES =====');
@@ -253,7 +390,12 @@ class BillingNotifier extends Notifier<BillingState> {
     }
   }
 
-  Future<void> loadAnalytics() async {
+  Future<void> loadAnalytics({bool forceRefresh = false}) async {
+    if (!forceRefresh &&
+        state.dailySummary.isNotEmpty &&
+        state.paymentBreakdown.isNotEmpty) {
+      return;
+    }
     try {
       debugPrint('===== API CALL: GET ANALYTICS =====');
       final summary = await _repository.getDailySummary();
@@ -280,12 +422,26 @@ class BillingNotifier extends Notifier<BillingState> {
       await _repository.cancelInvoice(id: id, reason: reason);
       debugPrint('===== API SUCCESS: CANCEL INVOICE =====');
 
-      // Refresh inventory stock amounts so the main screen updates instantly!
-      ref.read(inventoryNotifierProvider.notifier).loadInventory();
+      // ── Cache Invalidation ──────────────────────────────────────────────────
+      // Stock was restored to the backend on cancellation.
+      // 1. Clear the local batch cache.
+      _batchesCache.clear();
+      debugPrint('===== BATCH CACHE CLEARED (post-cancel) =====');
 
-      // Reload invoices and analytics
-      await loadInvoices();
-      await loadAnalytics();
+      // 2. Invalidate the Riverpod inventory provider so keepAlive screens
+      //    rebuild with restored stock quantities.
+      ref.invalidate(inventoryNotifierProvider);
+      debugPrint('===== INVENTORY PROVIDER INVALIDATED (post-cancel) =====');
+
+      // 3. Await a fresh inventory load.
+      await ref
+          .read(inventoryNotifierProvider.notifier)
+          .loadInventory(forceRefresh: true);
+      debugPrint('===== INVENTORY RELOADED (post-cancel) =====');
+
+      // 4. Reload invoices and analytics.
+      await loadInvoices(forceRefresh: true);
+      await loadAnalytics(forceRefresh: true);
 
       return true;
     } catch (e) {

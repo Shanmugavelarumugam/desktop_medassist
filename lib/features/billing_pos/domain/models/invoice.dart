@@ -58,7 +58,8 @@ abstract class MedicineBatch with _$MedicineBatch {
     required int quantity,
     required int availableQuantity,
     required String expiryDate,
-    required dynamic mrp, // mrp and purchasePrice come back as strings or nums from backend
+    required dynamic
+    mrp, // mrp and purchasePrice come back as strings or nums from backend
     dynamic purchasePrice,
     String? status,
     String? medicineName,
@@ -68,4 +69,3 @@ abstract class MedicineBatch with _$MedicineBatch {
   factory MedicineBatch.fromJson(Map<String, dynamic> json) =>
       _$MedicineBatchFromJson(json);
 }
-

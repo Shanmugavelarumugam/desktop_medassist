@@ -5,7 +5,7 @@ import '../../domain/repository/expiry_batch_repository.dart';
 import '../state/expiry_batch_state.dart';
 
 class ExpiryBatchNotifier extends Notifier<ExpiryBatchState> {
-  late final ExpiryBatchRepository _repository;
+  late ExpiryBatchRepository _repository;
 
   @override
   ExpiryBatchState build() {
@@ -16,7 +16,9 @@ class ExpiryBatchNotifier extends Notifier<ExpiryBatchState> {
     return const ExpiryBatchState();
   }
 
-  Future<void> loadBatches() async {
+  Future<void> loadBatches({bool forceRefresh = false}) async {
+    if (state.isLoading) return;
+    if (!forceRefresh && state.batches.isNotEmpty) return;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final list = await _repository.getBatches();
@@ -34,7 +36,9 @@ class ExpiryBatchNotifier extends Notifier<ExpiryBatchState> {
     try {
       await _repository.quarantineBatch(id);
       // Refresh inventory stock amounts so the main screen updates instantly!
-      ref.read(inventoryNotifierProvider.notifier).loadInventory();
+      ref
+          .read(inventoryNotifierProvider.notifier)
+          .loadInventory(forceRefresh: true);
       // Reload batches list
       await loadBatches();
       return true;
@@ -52,7 +56,9 @@ class ExpiryBatchNotifier extends Notifier<ExpiryBatchState> {
     try {
       await _repository.releaseBatch(id);
       // Refresh inventory stock amounts so the main screen updates instantly!
-      ref.read(inventoryNotifierProvider.notifier).loadInventory();
+      ref
+          .read(inventoryNotifierProvider.notifier)
+          .loadInventory(forceRefresh: true);
       // Reload batches list
       await loadBatches();
       return true;
@@ -70,7 +76,9 @@ class ExpiryBatchNotifier extends Notifier<ExpiryBatchState> {
     try {
       await _repository.recallBatch(id);
       // Refresh inventory stock amounts so the main screen updates instantly!
-      ref.read(inventoryNotifierProvider.notifier).loadInventory();
+      ref
+          .read(inventoryNotifierProvider.notifier)
+          .loadInventory(forceRefresh: true);
       // Reload batches list
       await loadBatches();
       return true;
@@ -93,4 +101,6 @@ class ExpiryBatchNotifier extends Notifier<ExpiryBatchState> {
 }
 
 final expiryBatchNotifierProvider =
-    NotifierProvider<ExpiryBatchNotifier, ExpiryBatchState>(ExpiryBatchNotifier.new);
+    NotifierProvider<ExpiryBatchNotifier, ExpiryBatchState>(
+      ExpiryBatchNotifier.new,
+    );

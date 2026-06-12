@@ -6,7 +6,7 @@ import '../../data/repository/purchase_repository_impl.dart';
 import '../state/purchase_state.dart';
 
 class PurchaseNotifier extends Notifier<PurchaseState> {
-  late final PurchaseRepository _repository;
+  late PurchaseRepository _repository;
 
   @override
   PurchaseState build() {
@@ -16,7 +16,8 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
     return const PurchaseState();
   }
 
-  Future<void> loadData() async {
+  Future<void> loadData({bool forceRefresh = false}) async {
+    if (!forceRefresh && state.purchaseOrders.isNotEmpty && state.suppliers.isNotEmpty) return;
     if (state.isLoading) return;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -35,7 +36,8 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
     }
   }
 
-  Future<void> loadPurchaseOrders() async {
+  Future<void> loadPurchaseOrders({bool forceRefresh = false}) async {
+    if (!forceRefresh && state.purchaseOrders.isNotEmpty) return;
     if (state.isLoading) return;
     try {
       final orders = await _repository.getPurchaseOrders();
@@ -47,7 +49,8 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
     }
   }
 
-  Future<void> loadSuppliers() async {
+  Future<void> loadSuppliers({bool forceRefresh = false}) async {
+    if (!forceRefresh && state.suppliers.isNotEmpty) return;
     if (state.isLoading) return;
     try {
       final suppliers = await _repository.getSuppliers();
@@ -68,7 +71,7 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
   }
 
   void setActiveTab(int index) {
-    state = state.copyWith(activeTab: index, searchQuery: '');
+    state = state.copyWith(activeTab: index, searchQuery: '', selectedStatus: 'All Status');
   }
 
   Future<bool> createPurchaseOrder({
@@ -162,7 +165,7 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
         isLoading: false,
       );
       // 3. IMPORTANT: Automatically reload active stock to show newly added batches and counts!
-      await ref.read(inventoryNotifierProvider.notifier).loadInventory();
+      await ref.read(inventoryNotifierProvider.notifier).loadInventory(forceRefresh: true);
       return true;
     } catch (e) {
       // Fallback: If receive fails due to the backend prisma issue, we still transition status to RECEIVED
@@ -174,7 +177,7 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
           purchaseOrders: orders,
           isLoading: false,
         );
-        await ref.read(inventoryNotifierProvider.notifier).loadInventory();
+        await ref.read(inventoryNotifierProvider.notifier).loadInventory(forceRefresh: true);
         return true;
       } catch (_) {}
       
@@ -192,6 +195,19 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
     required String email,
     required String gstNumber,
     required String address,
+    String? supplierType,
+    String? contactPerson,
+    String? drugLicenseNumber,
+    String? licenseExpiry,
+    String? status,
+    bool? isPreferred,
+    double? rating,
+    int? leadTimeDays,
+    int? paymentTermsDays,
+    double? creditLimit,
+    String? bankName,
+    String? accountNumber,
+    String? ifscCode,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -201,6 +217,19 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
         email: email,
         gstNumber: gstNumber,
         address: address,
+        supplierType: supplierType,
+        contactPerson: contactPerson,
+        drugLicenseNumber: drugLicenseNumber,
+        licenseExpiry: licenseExpiry,
+        status: status,
+        isPreferred: isPreferred,
+        rating: rating,
+        leadTimeDays: leadTimeDays,
+        paymentTermsDays: paymentTermsDays,
+        creditLimit: creditLimit,
+        bankName: bankName,
+        accountNumber: accountNumber,
+        ifscCode: ifscCode,
       );
       final suppliers = await _repository.getSuppliers();
       state = state.copyWith(
@@ -215,6 +244,18 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
       );
       return false;
     }
+  }
+
+  void deleteSupplierLocal(String id) {
+    state = state.copyWith(
+      suppliers: state.suppliers.where((s) => s.id != id).toList(),
+    );
+  }
+
+  void editSupplierLocal(Supplier supplier) {
+    state = state.copyWith(
+      suppliers: state.suppliers.map((s) => s.id == supplier.id ? supplier : s).toList(),
+    );
   }
 }
 
@@ -239,11 +280,16 @@ extension PurchaseFilter on PurchaseState {
 
   List<Supplier> get filteredSuppliers {
     return suppliers.where((sup) {
-      return searchQuery.isEmpty ||
+      final matchesSearch = searchQuery.isEmpty ||
           sup.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
           sup.phone.toLowerCase().contains(searchQuery.toLowerCase()) ||
           sup.email.toLowerCase().contains(searchQuery.toLowerCase()) ||
           sup.gstNumber.toLowerCase().contains(searchQuery.toLowerCase());
+
+      final matchesStatus = selectedStatus == 'All Status' ||
+          sup.status.toUpperCase() == selectedStatus.toUpperCase();
+
+      return matchesSearch && matchesStatus;
     }).toList();
   }
 }

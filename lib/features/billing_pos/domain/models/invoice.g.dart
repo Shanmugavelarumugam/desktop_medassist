@@ -6,18 +6,28 @@ part of 'invoice.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+// Helper: safely parse a value that may be String or num into num
+num _safeNum(dynamic v) {
+  if (v == null) return 0;
+  if (v is num) return v;
+  return num.tryParse(v.toString()) ?? 0;
+}
+
+// Helper: safely parse a value that may be String or num into int
+int _safeInt(dynamic v) => _safeNum(v).toInt();
+
 _InvoiceItem _$InvoiceItemFromJson(Map<String, dynamic> json) => _InvoiceItem(
-  id: json['id'] as String,
-  medicineId: json['medicineId'] as String,
-  name: json['name'] as String,
-  qty: (json['qty'] as num).toInt(),
-  price: json['price'] as num,
-  mrp: json['mrp'] as num,
-  gst: json['gst'] as num,
-  gstAmount: json['gstAmount'] as num,
-  total: json['total'] as num,
-  batchId: json['batchId'] as String,
-  batchNumber: json['batchNumber'] as String,
+  id: json['id']?.toString() ?? '',
+  medicineId: json['medicineId']?.toString() ?? '',
+  name: json['name']?.toString() ?? '',
+  qty: _safeInt(json['qty']),
+  price: _safeNum(json['price']),
+  mrp: _safeNum(json['mrp']),
+  gst: _safeNum(json['gst']),
+  gstAmount: _safeNum(json['gstAmount']),
+  total: _safeNum(json['total']),
+  batchId: json['batchId']?.toString() ?? '',
+  batchNumber: json['batchNumber']?.toString() ?? '',
 );
 
 Map<String, dynamic> _$InvoiceItemToJson(_InvoiceItem instance) =>
@@ -36,25 +46,25 @@ Map<String, dynamic> _$InvoiceItemToJson(_InvoiceItem instance) =>
     };
 
 _Invoice _$InvoiceFromJson(Map<String, dynamic> json) => _Invoice(
-  id: json['id'] as String,
-  invoiceNumber: json['invoiceNumber'] as String,
-  date: json['date'] as String,
-  status: json['status'] as String,
-  paymentStatus: json['paymentStatus'] as String,
-  paymentMethod: json['paymentMethod'] as String,
-  patientName: json['patientName'] as String,
-  patientPhone: json['patientPhone'] as String,
-  items: (json['items'] as List<dynamic>)
+  id: json['id']?.toString() ?? '',
+  invoiceNumber: json['invoiceNumber']?.toString() ?? '',
+  date: json['date']?.toString() ?? '',
+  status: json['status']?.toString() ?? '',
+  paymentStatus: json['paymentStatus']?.toString() ?? '',
+  paymentMethod: json['paymentMethod']?.toString() ?? '',
+  patientName: json['patientName']?.toString() ?? '',
+  patientPhone: json['patientPhone']?.toString() ?? '',
+  items: ((json['items'] as List<dynamic>?) ?? [])
       .map((e) => InvoiceItem.fromJson(e as Map<String, dynamic>))
       .toList(),
-  subtotal: json['subtotal'] as num,
-  discount: json['discount'] as num,
-  gst: json['gst'] as num,
-  total: json['total'] as num,
-  paidAmount: json['paidAmount'] as num,
-  balanceAmount: json['balanceAmount'] as num,
-  notes: json['notes'] as String?,
-  pdfUrl: json['pdfUrl'] as String?,
+  subtotal: _safeNum(json['subtotal']),
+  discount: _safeNum(json['discount']),
+  gst: _safeNum(json['gst']),
+  total: _safeNum(json['total']),
+  paidAmount: _safeNum(json['paidAmount']),
+  balanceAmount: _safeNum(json['balanceAmount']),
+  notes: json['notes']?.toString(),
+  pdfUrl: json['pdfUrl']?.toString(),
 );
 
 Map<String, dynamic> _$InvoiceToJson(_Invoice instance) => <String, dynamic>{
@@ -79,16 +89,16 @@ Map<String, dynamic> _$InvoiceToJson(_Invoice instance) => <String, dynamic>{
 
 _MedicineBatch _$MedicineBatchFromJson(Map<String, dynamic> json) =>
     _MedicineBatch(
-      id: json['id'] as String,
-      medicineId: json['medicineId'] as String,
-      batchNumber: json['batchNumber'] as String,
-      quantity: (json['quantity'] as num).toInt(),
-      availableQuantity: (json['availableQuantity'] as num).toInt(),
-      expiryDate: json['expiryDate'] as String,
+      id: json['id']?.toString() ?? '',
+      medicineId: json['medicineId']?.toString() ?? '',
+      batchNumber: json['batchNumber']?.toString() ?? '',
+      quantity: _safeInt(json['quantity']),
+      availableQuantity: _safeInt(json['availableQuantity']),
+      expiryDate: json['expiryDate']?.toString() ?? '',
       mrp: json['mrp'],
       purchasePrice: json['purchasePrice'],
-      status: json['status'] as String?,
-      medicineName: json['medicineName'] as String?,
+      status: json['status']?.toString(),
+      medicineName: json['medicineName']?.toString(),
       medicine: json['medicine'] as Map<String, dynamic>?,
     );
 

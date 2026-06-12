@@ -15,9 +15,43 @@ abstract class Supplier with _$Supplier {
     @Default('') String address,
     @Default('') String createdAt,
     @Default('') String updatedAt,
+    String? supplierCode,
+    String? supplierType,
+    String? contactPerson,
+    String? drugLicenseNumber,
+    String? licenseExpiry,
+    @Default('ACTIVE') String status,
+    @Default(false) bool isPreferred,
+    @JsonKey(fromJson: _parseDouble) double? rating,
+    @JsonKey(fromJson: _parseIntWithDefault7) @Default(7) int leadTimeDays,
+    @JsonKey(fromJson: _parseIntWithDefault30) @Default(30) int paymentTermsDays,
+    @JsonKey(fromJson: _parseDouble) double? creditLimit,
+    @JsonKey(fromJson: _parseDouble) double? outstandingBalance,
+    @JsonKey(fromJson: _parseDouble) double? totalPurchases,
+    String? bankName,
+    String? accountNumber,
+    String? ifscCode,
   }) = _Supplier;
 
   factory Supplier.fromJson(Map<String, dynamic> json) => _$SupplierFromJson(json);
+}
+
+double? _parseDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString());
+}
+
+int _parseIntWithDefault7(dynamic value) {
+  if (value == null) return 7;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString()) ?? 7;
+}
+
+int _parseIntWithDefault30(dynamic value) {
+  if (value == null) return 30;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString()) ?? 30;
 }
 
 @freezed

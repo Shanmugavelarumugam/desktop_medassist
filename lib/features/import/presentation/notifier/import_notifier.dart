@@ -5,7 +5,7 @@ import '../state/import_state.dart';
 import '../../../../core/helpers/csv_helper.dart';
 
 class ImportNotifier extends Notifier<ImportState> {
-  late final ImportRepository _repository;
+  late ImportRepository _repository;
 
   @override
   ImportState build() {
@@ -19,10 +19,7 @@ class ImportNotifier extends Notifier<ImportState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final history = await _repository.getImportHistory();
-      state = state.copyWith(
-        importJobs: history,
-        isLoading: false,
-      );
+      state = state.copyWith(importJobs: history, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -67,7 +64,9 @@ class ImportNotifier extends Notifier<ImportState> {
     try {
       final parsedRows = CsvHelper.parse(csvText);
       if (parsedRows.isEmpty) {
-        state = state.copyWith(errorMessage: 'The CSV file is empty or invalid.');
+        state = state.copyWith(
+          errorMessage: 'The CSV file is empty or invalid.',
+        );
         return;
       }
 
@@ -114,7 +113,7 @@ class ImportNotifier extends Notifier<ImportState> {
       'barcodeColumn': ['barcode', 'upc', 'ean', 'sku'],
       'genericColumn': ['generic'],
       'categoryColumn': ['category'],
-      'manufacturerColumn': ['manufacturer', 'mfg', 'brand']
+      'manufacturerColumn': ['manufacturer', 'mfg', 'brand'],
     };
 
     rules.forEach((key, patterns) {
@@ -189,7 +188,9 @@ class ImportNotifier extends Notifier<ImportState> {
       }
 
       // Handle DD/MM/YYYY or DD-MM-YYYY
-      final dmyMatch = RegExp(r'^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$').firstMatch(dateStr);
+      final dmyMatch = RegExp(
+        r'^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$',
+      ).firstMatch(dateStr);
       if (dmyMatch != null) {
         final day = int.parse(dmyMatch.group(1)!);
         final month = int.parse(dmyMatch.group(2)!);
@@ -214,7 +215,7 @@ class ImportNotifier extends Notifier<ImportState> {
     for (int i = 0; i < medicines.length; i++) {
       final med = medicines[i];
       final name = med['name'] ?? 'Row ${i + 1}';
-      
+
       // 1. Expiry Validation
       final expiryStr = med['expiry'] ?? '';
       if (expiryStr.isNotEmpty) {
@@ -225,7 +226,7 @@ class ImportNotifier extends Notifier<ImportState> {
             'name': name,
             'reason': 'Medicine is expired (Expiry: $expiryStr)',
             'warnings': [],
-            'action': 'Skip'
+            'action': 'Skip',
           });
         }
       }
@@ -239,7 +240,7 @@ class ImportNotifier extends Notifier<ImportState> {
           'name': name,
           'reason': 'Quantity must be a valid integer',
           'warnings': [],
-          'action': 'Skip'
+          'action': 'Skip',
         });
       } else if (qty < 0) {
         clientErrors.add({
@@ -247,7 +248,7 @@ class ImportNotifier extends Notifier<ImportState> {
           'name': name,
           'reason': 'Quantity cannot be negative',
           'warnings': [],
-          'action': 'Skip'
+          'action': 'Skip',
         });
       }
 
@@ -260,7 +261,7 @@ class ImportNotifier extends Notifier<ImportState> {
           'name': name,
           'reason': 'Price must be a valid decimal number',
           'warnings': [],
-          'action': 'Skip'
+          'action': 'Skip',
         });
       } else if (price < 0) {
         clientErrors.add({
@@ -268,7 +269,7 @@ class ImportNotifier extends Notifier<ImportState> {
           'name': name,
           'reason': 'Price cannot be negative',
           'warnings': [],
-          'action': 'Skip'
+          'action': 'Skip',
         });
       }
     }
@@ -297,12 +298,12 @@ class ImportNotifier extends Notifier<ImportState> {
         // Adjust readyCount to exclude client errors
         final totalCount = medicines.length;
         final errRowsCount = backendErrors.map((e) => e['row']).toSet().length;
-        summary['readyCount'] = (totalCount - errRowsCount).clamp(0, totalCount);
-
-        state = state.copyWith(
-          analysisSummary: summary,
-          errorMessage: null,
+        summary['readyCount'] = (totalCount - errRowsCount).clamp(
+          0,
+          totalCount,
         );
+
+        state = state.copyWith(analysisSummary: summary, errorMessage: null);
       }
     } catch (e) {
       state = state.copyWith(
@@ -310,9 +311,19 @@ class ImportNotifier extends Notifier<ImportState> {
           'error': e.toString().replaceFirst('Exception: ', ''),
           'readyCount': 0,
           'duplicates': 0,
-          'errors': clientErrors.isNotEmpty ? clientErrors : [{'row': 1, 'name': 'Import', 'reason': e.toString(), 'warnings': [], 'action': 'Skip'}],
-          'new': 0
-        }
+          'errors': clientErrors.isNotEmpty
+              ? clientErrors
+              : [
+                  {
+                    'row': 1,
+                    'name': 'Import',
+                    'reason': e.toString(),
+                    'warnings': [],
+                    'action': 'Skip',
+                  },
+                ],
+          'new': 0,
+        },
       );
     }
   }
@@ -324,19 +335,33 @@ class ImportNotifier extends Notifier<ImportState> {
     }
 
     return state.parsedCsvData.map((row) {
-      final rawExpiry = mapping['expiryColumn'] != null ? (row[mapping['expiryColumn']] ?? '').trim() : '';
+      final rawExpiry = mapping['expiryColumn'] != null
+          ? (row[mapping['expiryColumn']] ?? '').trim()
+          : '';
       final normalizedExpiry = _normalizeDate(rawExpiry);
 
       return {
         'name': (row[mapping['nameColumn']] ?? '').trim(),
         'qty': (row[mapping['qtyColumn']] ?? '0').trim(),
         'expiry': normalizedExpiry,
-        'price': mapping['priceColumn'] != null ? (row[mapping['priceColumn']] ?? '0').trim() : '0',
-        'batch': mapping['batchColumn'] != null ? (row[mapping['batchColumn']] ?? '').trim() : '',
-        'barcode': mapping['barcodeColumn'] != null ? (row[mapping['barcodeColumn']] ?? '').trim() : '',
-        'genericName': mapping['genericColumn'] != null ? (row[mapping['genericColumn']] ?? '').trim() : '',
-        'category': mapping['categoryColumn'] != null ? (row[mapping['categoryColumn']] ?? '').trim() : '',
-        'manufacturer': mapping['manufacturerColumn'] != null ? (row[mapping['manufacturerColumn']] ?? '').trim() : '',
+        'price': mapping['priceColumn'] != null
+            ? (row[mapping['priceColumn']] ?? '0').trim()
+            : '0',
+        'batch': mapping['batchColumn'] != null
+            ? (row[mapping['batchColumn']] ?? '').trim()
+            : '',
+        'barcode': mapping['barcodeColumn'] != null
+            ? (row[mapping['barcodeColumn']] ?? '').trim()
+            : '',
+        'genericName': mapping['genericColumn'] != null
+            ? (row[mapping['genericColumn']] ?? '').trim()
+            : '',
+        'category': mapping['categoryColumn'] != null
+            ? (row[mapping['categoryColumn']] ?? '').trim()
+            : '',
+        'manufacturer': mapping['manufacturerColumn'] != null
+            ? (row[mapping['manufacturerColumn']] ?? '').trim()
+            : '',
       };
     }).toList();
   }
@@ -345,7 +370,11 @@ class ImportNotifier extends Notifier<ImportState> {
     final medicines = _mapParsedDataToMedicines();
     if (medicines.isEmpty) return false;
 
-    state = state.copyWith(currentStep: 'importing', isUploading: true, errorMessage: null);
+    state = state.copyWith(
+      currentStep: 'importing',
+      isUploading: true,
+      errorMessage: null,
+    );
     try {
       final result = await _repository.importBulk(
         medicines: medicines,
@@ -378,10 +407,15 @@ class ImportNotifier extends Notifier<ImportState> {
   Future<bool> commitImportEtl() async {
     if (state.fileName == null || state.parsedCsvData.isEmpty) return false;
 
-    state = state.copyWith(currentStep: 'importing', isUploading: true, uploadProgress: 0.1, errorMessage: null);
+    state = state.copyWith(
+      currentStep: 'importing',
+      isUploading: true,
+      uploadProgress: 0.1,
+      errorMessage: null,
+    );
     try {
       final mapping = state.columnMapping;
-      
+
       final targetHeaders = [
         'name',
         'qty',
@@ -489,7 +523,9 @@ class ImportNotifier extends Notifier<ImportState> {
           await loadImportHistory();
           return true;
         } else if (status == 'failed' || status == 'error') {
-          throw Exception(summary?['error'] ?? 'ETL parsing job failed on backend');
+          throw Exception(
+            summary?['error'] ?? 'ETL parsing job failed on backend',
+          );
         }
       } catch (e) {
         state = state.copyWith(
@@ -512,4 +548,6 @@ class ImportNotifier extends Notifier<ImportState> {
 }
 
 // Global Injectable ImportNotifier Provider
-final importNotifierProvider = NotifierProvider<ImportNotifier, ImportState>(ImportNotifier.new);
+final importNotifierProvider = NotifierProvider<ImportNotifier, ImportState>(
+  ImportNotifier.new,
+);

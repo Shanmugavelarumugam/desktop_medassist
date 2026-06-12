@@ -17,5 +17,6 @@ abstract class AuthUser with _$AuthUser {
     required String currentPeriodEnd,
   }) = _AuthUser;
 
-  factory AuthUser.fromJson(Map<String, dynamic> json) => _$AuthUserFromJson(json);
+  factory AuthUser.fromJson(Map<String, dynamic> json) =>
+      _$AuthUserFromJson(json);
 }

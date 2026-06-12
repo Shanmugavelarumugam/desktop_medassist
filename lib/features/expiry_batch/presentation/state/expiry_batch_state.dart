@@ -4,7 +4,8 @@ class ExpiryBatchState {
   final List<MedicineBatch> batches;
   final bool isLoading;
   final String? errorMessage;
-  final String filterStatus; // 'All', 'Active', 'Expired', 'Near Expiry', 'Quarantined'
+  final String
+  filterStatus; // 'All', 'Active', 'Expired', 'Near Expiry', 'Quarantined'
   final String searchQuery;
 
   const ExpiryBatchState({

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +12,9 @@ class SessionExpiredNotifier extends Notifier<bool> {
   void reset() => state = false;
 }
 
-final sessionExpiredProvider = NotifierProvider<SessionExpiredNotifier, bool>(SessionExpiredNotifier.new);
+final sessionExpiredProvider = NotifierProvider<SessionExpiredNotifier, bool>(
+  SessionExpiredNotifier.new,
+);
 
 class DioClient {
   static const String baseUrl = 'https://medassist-backend-hryu.onrender.com';
@@ -36,10 +39,7 @@ class DioClient {
 
     if (kDebugMode) {
       dio.interceptors.add(
-        LogInterceptor(
-          requestBody: true,
-          responseBody: true,
-        ),
+        LogInterceptor(requestBody: true, responseBody: true),
       );
     }
 
@@ -53,31 +53,63 @@ class AuthInterceptor extends Interceptor {
   final Dio _refreshDio;
 
   AuthInterceptor(this._localDataSource, this._ref)
-      : _refreshDio = Dio(
-          BaseOptions(
-            baseUrl: DioClient.baseUrl,
-            connectTimeout: const Duration(seconds: 30),
-            receiveTimeout: const Duration(seconds: 60),
-            headers: {'Content-Type': 'application/json'},
-          ),
-        ) {
+    : _refreshDio = Dio(
+        BaseOptions(
+          baseUrl: DioClient.baseUrl,
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 60),
+          headers: {'Content-Type': 'application/json'},
+        ),
+      ) {
     if (kDebugMode) {
       _refreshDio.interceptors.add(
-        LogInterceptor(
-          requestBody: true,
-          responseBody: true,
-        ),
+        LogInterceptor(requestBody: true, responseBody: true),
       );
     }
   }
 
   Future<String?>? _refreshFuture;
 
+  bool _isTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) return true;
+      final payloadPart = parts[1];
+      var normalized = base64Url.normalize(payloadPart);
+      final payloadString = utf8.decode(base64Url.decode(normalized));
+      final decoded = jsonDecode(payloadString);
+      if (decoded is! Map || !decoded.containsKey('exp')) return true;
+      final exp = decoded['exp'] as int;
+      final expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      // Refresh if expired or expiring within 60 seconds (buffer)
+      return DateTime.now().add(const Duration(seconds: 60)).isAfter(expiry);
+    } catch (_) {
+      return true; // Assume expired if parse fails
+    }
+  }
+
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await _localDataSource.getToken();
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    if (!options.path.contains('/api/auth/login') &&
+        !options.path.contains('/api/auth/register') &&
+        !options.path.contains('/api/auth/refresh')) {
+      var token = await _localDataSource.getToken();
+      if (token != null) {
+        if (_isTokenExpired(token)) {
+          try {
+            final refreshedToken = await _getValidAccessToken();
+            if (refreshedToken != null) {
+              token = refreshedToken;
+            }
+          } catch (e) {
+            debugPrint('Proactive token refresh failed: $e');
+          }
+        }
+        options.headers['Authorization'] = 'Bearer $token';
+      }
     }
     super.onRequest(options, handler);
   }
@@ -100,7 +132,7 @@ class AuthInterceptor extends Interceptor {
         if (newAccessToken != null) {
           // Update the authorization header for retried request
           requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-          
+
           final retryDio = Dio(
             BaseOptions(
               baseUrl: DioClient.baseUrl,
@@ -108,7 +140,7 @@ class AuthInterceptor extends Interceptor {
               receiveTimeout: const Duration(seconds: 60),
             ),
           );
-          
+
           final retryResponse = await retryDio.request(
             requestOptions.path,
             data: requestOptions.data,
@@ -120,11 +152,12 @@ class AuthInterceptor extends Interceptor {
               extra: requestOptions.extra,
             ),
           );
-          
+
           return handler.resolve(retryResponse);
         }
       } catch (refreshErr) {
-        if (refreshErr is DioException && refreshErr.response?.statusCode == 401) {
+        if (refreshErr is DioException &&
+            refreshErr.response?.statusCode == 401) {
           await _localDataSource.clearAll();
           _ref.read(sessionExpiredProvider.notifier).trigger();
         }
@@ -137,9 +170,13 @@ class AuthInterceptor extends Interceptor {
 
   Future<String?> _getValidAccessToken() {
     if (_refreshFuture != null) {
+      debugPrint(
+        'Token refresh already in progress. Sharing existing refresh operation...',
+      );
       return _refreshFuture!;
     }
 
+    debugPrint('Proactively refreshing expired token...');
     _refreshFuture = _executeTokenRefresh();
     return _refreshFuture!.whenComplete(() {
       _refreshFuture = null;
@@ -162,7 +199,9 @@ class AuthInterceptor extends Interceptor {
       data: {'refreshToken': refreshToken},
     );
 
-    if (response.statusCode == 200 && response.data != null && response.data['success'] == true) {
+    if (response.statusCode == 200 &&
+        response.data != null &&
+        response.data['success'] == true) {
       final data = response.data['data'];
       final newAccessToken = data['token'];
       final newRefreshToken = data['refreshToken'];

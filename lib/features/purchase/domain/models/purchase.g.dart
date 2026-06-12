@@ -16,6 +16,26 @@ _Supplier _$SupplierFromJson(Map<String, dynamic> json) => _Supplier(
   address: json['address'] as String? ?? '',
   createdAt: json['createdAt'] as String? ?? '',
   updatedAt: json['updatedAt'] as String? ?? '',
+  supplierCode: json['supplierCode'] as String?,
+  supplierType: json['supplierType'] as String?,
+  contactPerson: json['contactPerson'] as String?,
+  drugLicenseNumber: json['drugLicenseNumber'] as String?,
+  licenseExpiry: json['licenseExpiry'] as String?,
+  status: json['status'] as String? ?? 'ACTIVE',
+  isPreferred: json['isPreferred'] as bool? ?? false,
+  rating: _parseDouble(json['rating']),
+  leadTimeDays: json['leadTimeDays'] == null
+      ? 7
+      : _parseIntWithDefault7(json['leadTimeDays']),
+  paymentTermsDays: json['paymentTermsDays'] == null
+      ? 30
+      : _parseIntWithDefault30(json['paymentTermsDays']),
+  creditLimit: _parseDouble(json['creditLimit']),
+  outstandingBalance: _parseDouble(json['outstandingBalance']),
+  totalPurchases: _parseDouble(json['totalPurchases']),
+  bankName: json['bankName'] as String?,
+  accountNumber: json['accountNumber'] as String?,
+  ifscCode: json['ifscCode'] as String?,
 );
 
 Map<String, dynamic> _$SupplierToJson(_Supplier instance) => <String, dynamic>{
@@ -28,6 +48,22 @@ Map<String, dynamic> _$SupplierToJson(_Supplier instance) => <String, dynamic>{
   'address': instance.address,
   'createdAt': instance.createdAt,
   'updatedAt': instance.updatedAt,
+  'supplierCode': instance.supplierCode,
+  'supplierType': instance.supplierType,
+  'contactPerson': instance.contactPerson,
+  'drugLicenseNumber': instance.drugLicenseNumber,
+  'licenseExpiry': instance.licenseExpiry,
+  'status': instance.status,
+  'isPreferred': instance.isPreferred,
+  'rating': instance.rating,
+  'leadTimeDays': instance.leadTimeDays,
+  'paymentTermsDays': instance.paymentTermsDays,
+  'creditLimit': instance.creditLimit,
+  'outstandingBalance': instance.outstandingBalance,
+  'totalPurchases': instance.totalPurchases,
+  'bankName': instance.bankName,
+  'accountNumber': instance.accountNumber,
+  'ifscCode': instance.ifscCode,
 };
 
 _PurchaseOrderItem _$PurchaseOrderItemFromJson(Map<String, dynamic> json) =>

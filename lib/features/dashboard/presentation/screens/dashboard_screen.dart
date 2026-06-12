@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:desktop_medassist/app/router/route_paths.dart';
 import 'package:desktop_medassist/features/auth/presentation/controller/auth_controller.dart';
 import 'package:desktop_medassist/features/inventory/presentation/screens/stock_screen.dart';
@@ -13,6 +14,10 @@ import 'package:desktop_medassist/features/expiry_batch/presentation/screens/exp
 import 'package:desktop_medassist/features/expiry_batch/presentation/notifier/expiry_batch_notifier.dart';
 import 'package:desktop_medassist/features/barcode/presentation/screens/barcode_screen.dart';
 import 'package:desktop_medassist/features/barcode/presentation/notifier/barcode_notifier.dart';
+import 'package:desktop_medassist/features/billing_pos/presentation/notifier/billing_notifier.dart';
+import 'package:desktop_medassist/features/inventory/presentation/notifier/inventory_notifier.dart';
+import 'package:desktop_medassist/features/profile/presentation/screens/profile_settings_screen.dart';
+import 'package:desktop_medassist/features/profile/presentation/screens/shop_profile_screen.dart';
 
 class ActiveRouteNotifier extends Notifier<String> {
   @override
@@ -38,10 +43,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String get _activeRoute => ref.watch(activeRouteProvider);
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
-
-
     final authState = ref.watch(authControllerProvider);
+    final billingState = ref.watch(billingNotifierProvider);
+    final inventoryState = ref.watch(inventoryNotifierProvider);
+
+    // ── Live Dashboard Stats ────────────────────────────────────────────────────
+    // Daily summary is a flat map: {netRevenue, totalInvoices, totalSales, ...}
+    final summary = billingState.dailySummary;
+    double toDouble(dynamic v) => v == null
+        ? 0.0
+        : (v is num ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0);
+    final double todayRevenue = toDouble(
+      summary['netRevenue'] ?? summary['totalRevenue'] ?? summary['totalSales'],
+    );
+    final int totalSKU = inventoryState.totalSKU;
+    final int expiredCount = inventoryState.expiredCount;
+
     final user = authState.user;
     final fullName = user?.fullName ?? 'User';
     final String initials;
@@ -73,9 +96,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             width: 260,
             decoration: const BoxDecoration(
               color: Colors.white,
-              border: Border(
-                right: BorderSide(color: borderGrey, width: 1),
-              ),
+              border: Border(right: BorderSide(color: borderGrey, width: 1)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,7 +217,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         activeColor: primaryTeal,
                         isStatic: true,
                         onTap: () async {
-                          await ref.read(authControllerProvider.notifier).logout();
+                          await ref
+                              .read(authControllerProvider.notifier)
+                              .logout();
                           if (context.mounted) {
                             context.go(RoutePaths.login);
                           }
@@ -238,39 +261,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.notifications_none_rounded, color: softGrey),
+                            icon: const Icon(
+                              Icons.notifications_none_rounded,
+                              color: softGrey,
+                            ),
                             onPressed: () {},
                           ),
                           const SizedBox(width: 16),
-                          Container(
-                            width: 1,
-                            height: 24,
-                            color: borderGrey,
-                          ),
+                          Container(width: 1, height: 24, color: borderGrey),
                           const SizedBox(width: 16),
                           PopupMenuButton<String>(
                             offset: const Offset(0, 45),
                             elevation: 4,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                              side: const BorderSide(color: borderGrey, width: 1),
+                              side: const BorderSide(
+                                color: borderGrey,
+                                width: 1,
+                              ),
                             ),
                             color: Colors.white,
                             tooltip: 'User Profile',
                             onSelected: (value) async {
                               if (value == 'logout') {
-                                await ref.read(authControllerProvider.notifier).logout();
+                                await ref
+                                    .read(authControllerProvider.notifier)
+                                    .logout();
                                 if (context.mounted) {
                                   context.go(RoutePaths.login);
                                 }
                               } else if (value == 'profile') {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Profile Settings coming soon!')),
-                                );
+                                ref
+                                    .read(activeRouteProvider.notifier)
+                                    .changeRoute('Profile Settings');
                               } else if (value == 'shop') {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Shop Profile coming soon!')),
-                                );
+                                ref
+                                    .read(activeRouteProvider.notifier)
+                                    .changeRoute('Shop Profile');
                               }
                             },
                             child: Row(
@@ -308,15 +335,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               PopupMenuItem<String>(
                                 enabled: false,
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8.0,
+                                    horizontal: 4.0,
+                                  ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           CircleAvatar(
                                             radius: 20,
-                                            backgroundColor: primaryTeal.withValues(alpha: 0.1),
+                                            backgroundColor: primaryTeal
+                                                .withValues(alpha: 0.1),
                                             child: Text(
                                               initials,
                                               style: const TextStyle(
@@ -329,7 +361,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   fullName,
@@ -354,10 +387,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       ),
                                       const SizedBox(height: 12),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: primaryTeal.withValues(alpha: 0.08),
-                                          borderRadius: BorderRadius.circular(4),
+                                          color: primaryTeal.withValues(
+                                            alpha: 0.08,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         ),
                                         child: Text(
                                           (user?.role ?? 'USER').toUpperCase(),
@@ -378,7 +418,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 value: 'profile',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.person_outline_rounded, color: Color(0xFF64748B), size: 18),
+                                    Icon(
+                                      Icons.person_outline_rounded,
+                                      color: Color(0xFF64748B),
+                                      size: 18,
+                                    ),
                                     SizedBox(width: 12),
                                     Text(
                                       'Profile Settings',
@@ -395,7 +439,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 value: 'shop',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.storefront_outlined, color: Color(0xFF64748B), size: 18),
+                                    Icon(
+                                      Icons.storefront_outlined,
+                                      color: Color(0xFF64748B),
+                                      size: 18,
+                                    ),
                                     SizedBox(width: 12),
                                     Text(
                                       'Shop Profile',
@@ -413,7 +461,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 value: 'logout',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 18),
+                                    Icon(
+                                      Icons.logout_rounded,
+                                      color: Color(0xFFEF4444),
+                                      size: 18,
+                                    ),
                                     SizedBox(width: 12),
                                     Text(
                                       'Log Out',
@@ -433,117 +485,463 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ],
                   ),
                 ),
-
-                // Main Workspace Page Area
                 Expanded(
-                  child: _activeRoute == 'Stock'
-                      ? const StockScreen()
-                      : _activeRoute == 'Billing / POS'
-                          ? const BillingPosScreen()
-                          : (_activeRoute == 'Purchases' || _activeRoute == 'Suppliers')
-                              ? const PurchasesScreen()
-                              : _activeRoute == 'Import'
-                                  ? const ImportScreen()
-                                  : _activeRoute == 'Sales'
-                                      ? const SalesScreen()
-                                      : _activeRoute == 'Expiry & Batch'
-                                          ? const ExpiryBatchScreen()
-                                          : _activeRoute == 'Barcode & QR'
-                                              ? const BarcodeScreen()
-                                              : SingleChildScrollView(
-                                  padding: const EdgeInsets.all(32.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Dynamic Content welcome card
-                              Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  gradient: const LinearGradient(
-                                    colors: [primaryTeal, Color(0xFF0F766E)],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: primaryTeal.withValues(alpha: 0.12),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            'Welcome back to MedAssist clinical control!',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'All features are active. You have 8 patients and 4 expiry updates awaiting your clinical confirmation today.',
-                                            style: TextStyle(
-                                              color: Colors.white.withValues(alpha: 0.9),
-                                              fontSize: 15,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Icon(
-                                      Icons.health_and_safety_outlined,
-                                      size: 70,
-                                      color: Colors.white.withValues(alpha: 0.2),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-
-                              // Stats Summary Row
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildSummaryCard(
-                                      title: 'Active Stock Items',
-                                      value: '2,482',
-                                      icon: Icons.inventory_2_outlined,
-                                      color: primaryTeal,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 20),
-                                  Expanded(
-                                    child: _buildSummaryCard(
-                                      title: 'Daily Sales',
-                                      value: '\$1,540.25',
-                                      icon: Icons.trending_up_rounded,
-                                      color: const Color(0xFF10B981),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 20),
-                                  Expanded(
-                                    child: _buildSummaryCard(
-                                      title: 'Expired Batches',
-                                      value: '4 Alerted',
-                                      icon: Icons.warning_amber_rounded,
-                                      color: Colors.amber,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                  child: _buildActiveScreen(
+                    _activeRoute,
+                    primaryTeal,
+                    textDark,
+                    borderGrey,
+                    backgroundGrey,
+                    initials,
+                    fullName,
+                    billingState,
+                    inventoryState,
+                    todayRevenue,
+                    totalSKU,
+                    expiredCount,
+                  ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveScreen(
+    String activeRoute,
+    Color primaryTeal,
+    Color textDark,
+    Color borderGrey,
+    Color backgroundGrey,
+    String initials,
+    String fullName,
+    dynamic billingState,
+    dynamic inventoryState,
+    double todayRevenue,
+    int totalSKU,
+    int expiredCount,
+  ) {
+    switch (activeRoute) {
+      case 'Stock':
+        return const StockScreen();
+      case 'Billing / POS':
+        return const BillingPosScreen();
+      case 'Purchases':
+      case 'Suppliers':
+        return const PurchasesScreen();
+      case 'Import':
+        return const ImportScreen();
+      case 'Sales':
+        return const SalesScreen();
+      case 'Expiry & Batch':
+        return const ExpiryBatchScreen();
+      case 'Barcode & QR':
+        return const BarcodeScreen();
+      case 'Profile Settings':
+        return const ProfileSettingsScreen();
+      case 'Shop Profile':
+        return const ShopProfileScreen();
+      default:
+        return _buildDashboardHome(
+          primaryTeal,
+          textDark,
+          borderGrey,
+          backgroundGrey,
+          initials,
+          fullName,
+          billingState,
+          inventoryState,
+          todayRevenue,
+          totalSKU,
+          expiredCount,
+        );
+    }
+  }
+
+  Widget _buildDashboardHome(
+    Color primaryTeal,
+    Color textDark,
+    Color borderGrey,
+    Color backgroundGrey,
+    String initials,
+    String fullName,
+    dynamic billingState,
+    dynamic inventoryState,
+    double todayRevenue,
+    int totalSKU,
+    int expiredCount,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Dynamic Content welcome card
+          Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [primaryTeal, Color(0xFF0F766E)],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryTeal.withValues(alpha: 0.15),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Welcome back to MedAssist Control!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'All features are active. You have 8 patients and $expiredCount expiry alerts awaiting your clinical confirmation today.',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Icon(
+                  Icons.health_and_safety_outlined,
+                  size: 80,
+                  color: Colors.white.withValues(alpha: 0.15),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Stats Summary Row
+          Row(
+            children: [
+              Expanded(
+                child: HoverSummaryCard(
+                  title: 'Total Stock SKUs',
+                  value: totalSKU > 0 ? totalSKU.toString() : '—',
+                  icon: Icons.inventory_2_outlined,
+                  color: primaryTeal,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: HoverSummaryCard(
+                  title: "Today's Net Revenue",
+                  value: billingState.isLoading
+                      ? '…'
+                      : '₹${NumberFormat('#,##,##0.00').format(todayRevenue)}',
+                  icon: Icons.trending_up_rounded,
+                  color: const Color(0xFF10B981),
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: HoverSummaryCard(
+                  title: 'Expired Batches',
+                  value: expiredCount > 0 ? '$expiredCount Alerted' : 'None',
+                  icon: Icons.warning_amber_rounded,
+                  color: expiredCount > 0
+                      ? Colors.amber
+                      : const Color(0xFF10B981),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Charts & Recent Activity Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left Panel: Line Chart
+              Expanded(
+                flex: 3,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Redundant Trend',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Revenue trends over the last 7 days',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: primaryTeal.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Weekly View',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: primaryTeal,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        height: 200,
+                        width: double.infinity,
+                        child: CustomPaint(
+                          painter: LineChartPainter(() {
+                            final invoices = billingState.invoices;
+                            final Map<int, double> dayRevenueMap = {};
+                            final now = DateTime.now();
+
+                            for (int i = 0; i < 7; i++) {
+                              final targetDate = now.subtract(
+                                Duration(days: 6 - i),
+                              );
+                              dayRevenueMap[targetDate.day] = 0.0;
+                            }
+
+                            for (final invoice in invoices) {
+                              try {
+                                final date = DateTime.parse(
+                                  invoice.date,
+                                ).toLocal();
+                                final difference = now.difference(date).inDays;
+                                if (difference >= 0 && difference < 7) {
+                                  dayRevenueMap[date.day] =
+                                      (dayRevenueMap[date.day] ?? 0.0) +
+                                      invoice.total;
+                                }
+                              } catch (_) {}
+                            }
+
+                            return List<double>.generate(7, (i) {
+                              final targetDate = now.subtract(
+                                Duration(days: 6 - i),
+                              );
+                              return dayRevenueMap[targetDate.day] ?? 0.0;
+                            });
+                          }()),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(7, (i) {
+                          final targetDate = DateTime.now().subtract(
+                            Duration(days: 6 - i),
+                          );
+                          final label = DateFormat('E').format(targetDate);
+                          return Text(
+                            label,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF64748B),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 24),
+
+              // Right Panel: Recent Transactions
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  height: 315,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Recent Sales',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          TextButton(
+                            onPressed: () {
+                              ref
+                                  .read(activeRouteProvider.notifier)
+                                  .changeRoute('Sales');
+                            },
+                            child: Text(
+                              'View All',
+                              style: TextStyle(
+                                color: primaryTeal,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: billingState.invoices.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'No sales recorded yet',
+                                  style: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: billingState.invoices.take(5).length,
+                                separatorBuilder: (context, index) =>
+                                    const Divider(
+                                      height: 16,
+                                      color: Color(0xFFF1F5F9),
+                                    ),
+                                itemBuilder: (context, index) {
+                                  final invoice = billingState.invoices[index];
+                                  final formattedDate = () {
+                                    try {
+                                      return DateFormat('hh:mm a').format(
+                                        DateTime.parse(invoice.date).toLocal(),
+                                      );
+                                    } catch (_) {
+                                      return '';
+                                    }
+                                  }();
+                                  final isPaid =
+                                      invoice.status.toUpperCase() == 'PAID';
+                                  return Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: isPaid
+                                            ? const Color(0xFFECFDF5)
+                                            : const Color(0xFFFEF2F2),
+                                        child: Icon(
+                                          isPaid
+                                              ? Icons
+                                                    .check_circle_outline_rounded
+                                              : Icons.cancel_outlined,
+                                          color: isPaid
+                                              ? const Color(0xFF10B981)
+                                              : const Color(0xFFEF4444),
+                                          size: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              invoice.patientName.isEmpty
+                                                  ? 'Walk-in Customer'
+                                                  : invoice.patientName,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              '#${invoice.invoiceNumber} • $formattedDate',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Color(0xFF64748B),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        '₹${invoice.total.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 14,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -564,12 +962,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ? onTap
           : () {
               ref.read(activeRouteProvider.notifier).changeRoute(label);
-              if (label == 'Suppliers') {
+              if (label == 'Dashboard') {
+                ref
+                    .read(billingNotifierProvider.notifier)
+                    .loadAnalytics(forceRefresh: true);
+                ref
+                    .read(billingNotifierProvider.notifier)
+                    .loadInvoices(forceRefresh: true);
+              } else if (label == 'Suppliers') {
                 ref.read(purchaseNotifierProvider.notifier).setActiveTab(1);
                 ref.read(purchaseNotifierProvider.notifier).loadSuppliers();
               } else if (label == 'Purchases') {
                 ref.read(purchaseNotifierProvider.notifier).setActiveTab(0);
-                ref.read(purchaseNotifierProvider.notifier).loadPurchaseOrders();
+                ref
+                    .read(purchaseNotifierProvider.notifier)
+                    .loadPurchaseOrders();
               } else if (label == 'Expiry & Batch') {
                 ref.read(expiryBatchNotifierProvider.notifier).loadBatches();
               } else if (label == 'Barcode & QR') {
@@ -580,7 +987,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Container(
         height: 48,
         decoration: BoxDecoration(
-          color: isActive ? activeColor.withValues(alpha: 0.12) : Colors.transparent,
+          color: isActive
+              ? activeColor.withValues(alpha: 0.12)
+              : Colors.transparent,
         ),
         child: Row(
           children: [
@@ -606,7 +1015,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Text(
               label,
               style: TextStyle(
-                color: isActive ? const Color(0xFF0F172A) : const Color(0xFF475569),
+                color: isActive
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFF475569),
                 fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
                 fontSize: 14,
               ),
@@ -616,60 +1027,173 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
   }
+}
 
-  Widget _buildSummaryCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.01),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+class HoverSummaryCard extends StatefulWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const HoverSummaryCard({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  State<HoverSummaryCard> createState() => _HoverSummaryCardState();
+}
+
+class _HoverSummaryCardState extends State<HoverSummaryCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.all(24),
+        transform: Matrix4.translationValues(0.0, _isHovered ? -4.0 : 0.0, 0.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _isHovered
+                ? widget.color.withValues(alpha: 0.5)
+                : const Color(0xFFE2E8F0),
+            width: _isHovered ? 1.5 : 1.0,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: _isHovered
+                  ? widget.color.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.02),
+              blurRadius: _isHovered ? 16 : 8,
+              offset: Offset(0, _isHovered ? 8 : 4),
             ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1E293B),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: widget.color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(widget.icon, color: widget.color, size: 22),
+                ),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  color: _isHovered ? widget.color : Colors.transparent,
+                  size: 18,
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF64748B),
+            const SizedBox(height: 20),
+            Text(
+              widget.value,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              widget.title,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class LineChartPainter extends CustomPainter {
+  final List<double> dataPoints;
+
+  LineChartPainter(this.dataPoints);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (dataPoints.isEmpty) return;
+
+    final paintLine = Paint()
+      ..color = const Color(0xFF0D9488)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    final double stepX = size.width / (dataPoints.length - 1);
+    final double maxVal = dataPoints.reduce((a, b) => a > b ? a : b);
+    final double minVal = dataPoints.reduce((a, b) => a < b ? a : b);
+    final double range = (maxVal - minVal) == 0 ? 1.0 : (maxVal - minVal);
+
+    double getY(double val) {
+      final double normalized = (val - minVal) / range;
+      return size.height - (normalized * (size.height - 40) + 20);
+    }
+
+    path.moveTo(0, getY(dataPoints[0]));
+    for (int i = 1; i < dataPoints.length; i++) {
+      path.lineTo(i * stepX, getY(dataPoints[i]));
+    }
+
+    final fillPath = Path.from(path)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFF0D9488).withValues(alpha: 0.20),
+          const Color(0xFF0D9488).withValues(alpha: 0.00),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    canvas.drawPath(fillPath, fillPaint);
+    canvas.drawPath(path, paintLine);
+
+    final pointPaint = Paint()
+      ..color = const Color(0xFF0D9488)
+      ..style = PaintingStyle.fill;
+    final outerRingPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < dataPoints.length; i++) {
+      final cx = i * stepX;
+      final cy = getY(dataPoints[i]);
+      canvas.drawCircle(Offset(cx, cy), 6.5, outerRingPaint);
+      canvas.drawCircle(Offset(cx, cy), 4.0, pointPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant LineChartPainter oldDelegate) =>
+      oldDelegate.dataPoints != dataPoints;
 }
 
 const softGrey = Color(0xFF94A3B8);

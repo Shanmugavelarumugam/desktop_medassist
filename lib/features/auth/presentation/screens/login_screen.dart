@@ -7,17 +7,15 @@ import 'package:desktop_medassist/features/auth/presentation/controller/auth_con
 class LoginScreen extends ConsumerStatefulWidget {
   final bool showSignUpInitially;
 
-  const LoginScreen({
-    super.key,
-    this.showSignUpInitially = false,
-  });
+  const LoginScreen({super.key, this.showSignUpInitially = false});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  late int _authView; // 0 = login, 1 = signUp, 2 = forgotPassword, 3 = resetPassword
+  late int
+  _authView; // 0 = login, 1 = signUp, 2 = forgotPassword, 3 = resetPassword
 
   // Form keys and Controllers
   final _loginFormKey = GlobalKey<FormState>();
@@ -64,10 +62,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _isLoading = true;
       });
 
-      final success = await ref.read(authControllerProvider.notifier).login(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
+      final success = await ref
+          .read(authControllerProvider.notifier)
+          .login(
+            email: _emailController.text,
+            password: _passwordController.text,
+          );
 
       if (mounted) {
         setState(() {
@@ -77,7 +77,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (success) {
           context.go(RoutePaths.dashboard);
         } else {
-          final errorMsg = ref.read(authControllerProvider).errorMessage ?? 'Login failed';
+          final errorMsg =
+              ref.read(authControllerProvider).errorMessage ?? 'Login failed';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMsg),
@@ -95,7 +96,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!_agreeTerms) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please agree to the Terms of Service & Privacy Policy.'),
+            content: Text(
+              'Please agree to the Terms of Service & Privacy Policy.',
+            ),
             behavior: SnackBarBehavior.floating,
             backgroundColor: Color(0xFFEF4444),
           ),
@@ -107,12 +110,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _isLoading = true;
       });
 
-      final success = await ref.read(authControllerProvider.notifier).register(
-        email: _emailController.text,
-        password: _passwordController.text,
-        confirmPassword: _confirmPasswordController.text,
-        fullName: _nameController.text,
-      );
+      final success = await ref
+          .read(authControllerProvider.notifier)
+          .register(
+            email: _emailController.text,
+            password: _passwordController.text,
+            confirmPassword: _confirmPasswordController.text,
+            fullName: _nameController.text,
+          );
 
       if (mounted) {
         setState(() {
@@ -122,7 +127,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (success) {
           context.go(RoutePaths.dashboard);
         } else {
-          final errorMsg = ref.read(authControllerProvider).errorMessage ?? 'Registration failed';
+          final errorMsg =
+              ref.read(authControllerProvider).errorMessage ??
+              'Registration failed';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMsg),
@@ -152,7 +159,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 48,
+                ),
                 child: IntrinsicHeight(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -161,7 +170,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Center(
                           child: Container(
                             width: isDesktop ? 1200 : 460,
-                            padding: EdgeInsets.symmetric(vertical: isDesktop ? 20 : 10),
+                            padding: EdgeInsets.symmetric(
+                              vertical: isDesktop ? 20 : 10,
+                            ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
@@ -170,23 +181,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   Expanded(
                                     flex: 6,
                                     child: Padding(
-                                      padding: const EdgeInsets.only(right: 80.0),
+                                      padding: const EdgeInsets.only(
+                                        right: 80.0,
+                                      ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           ClipRRect(
-                                            borderRadius: BorderRadius.circular(20),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
                                             child: Image.asset(
                                               'assets/logo/image.png',
                                               width: 180,
                                               height: 180,
                                               fit: BoxFit.contain,
-                                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                                Icons.medical_services_rounded,
-                                                size: 140,
-                                                color: primaryTeal,
-                                              ),
+                                              errorBuilder:
+                                                  (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) => const Icon(
+                                                    Icons
+                                                        .medical_services_rounded,
+                                                    size: 140,
+                                                    color: primaryTeal,
+                                                  ),
                                             ),
                                           ),
                                           const SizedBox(height: 36),
@@ -209,7 +232,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             ),
                                           ),
                                           const SizedBox(height: 32),
-                                          _buildDashboardPreview(primaryTeal, darkSlate, borderGrey),
+                                          _buildDashboardPreview(
+                                            primaryTeal,
+                                            darkSlate,
+                                            borderGrey,
+                                          ),
                                           const SizedBox(height: 32),
                                           Row(
                                             children: [
@@ -223,7 +250,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               const SizedBox(width: 16),
                                               Expanded(
                                                 child: _buildInfoCard(
-                                                  icon: Icons.lock_outline_rounded,
+                                                  icon: Icons
+                                                      .lock_outline_rounded,
                                                   title: 'COMPLIANCE',
                                                   value: '24/7 Global',
                                                 ),
@@ -240,30 +268,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   flex: 5,
                                   child: Center(
                                     child: ConstrainedBox(
-                                      constraints: const BoxConstraints(maxWidth: 420),
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 420,
+                                      ),
                                       child: AnimatedSwitcher(
-                                        duration: const Duration(milliseconds: 350),
+                                        duration: const Duration(
+                                          milliseconds: 350,
+                                        ),
                                         switchInCurve: Curves.easeInOutCubic,
                                         switchOutCurve: Curves.easeInOutCubic,
-                                        transitionBuilder: (Widget child, Animation<double> animation) {
-                                          return FadeTransition(
-                                            opacity: animation,
-                                            child: SlideTransition(
-                                              position: Tween<Offset>(
-                                                begin: const Offset(0.04, 0),
-                                                end: Offset.zero,
-                                              ).animate(animation),
-                                              child: child,
-                                            ),
-                                          );
-                                        },
+                                        transitionBuilder:
+                                            (
+                                              Widget child,
+                                              Animation<double> animation,
+                                            ) {
+                                              return FadeTransition(
+                                                opacity: animation,
+                                                child: SlideTransition(
+                                                  position: Tween<Offset>(
+                                                    begin: const Offset(
+                                                      0.04,
+                                                      0,
+                                                    ),
+                                                    end: Offset.zero,
+                                                  ).animate(animation),
+                                                  child: child,
+                                                ),
+                                              );
+                                            },
                                         child: _authView == 0
-                                            ? _buildLoginForm(primaryTeal, darkSlate, softGrey, borderGrey)
+                                            ? _buildLoginForm(
+                                                primaryTeal,
+                                                darkSlate,
+                                                softGrey,
+                                                borderGrey,
+                                              )
                                             : _authView == 1
-                                                ? _buildSignupForm(primaryTeal, darkSlate, softGrey)
-                                                : _authView == 2
-                                                    ? _buildForgotPasswordForm(primaryTeal, darkSlate, softGrey)
-                                                    : _buildResetPasswordForm(primaryTeal, darkSlate, softGrey),
+                                            ? _buildSignupForm(
+                                                primaryTeal,
+                                                darkSlate,
+                                                softGrey,
+                                              )
+                                            : _authView == 2
+                                            ? _buildForgotPasswordForm(
+                                                primaryTeal,
+                                                darkSlate,
+                                                softGrey,
+                                              )
+                                            : _buildResetPasswordForm(
+                                                primaryTeal,
+                                                darkSlate,
+                                                softGrey,
+                                              ),
                                       ),
                                     ),
                                   ),
@@ -282,18 +338,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           children: [
                             const Row(
                               children: [
-                                Icon(Icons.check_circle_outline_rounded, size: 14, color: softGrey),
+                                Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  size: 14,
+                                  color: softGrey,
+                                ),
                                 SizedBox(width: 6),
                                 Text(
                                   'HIPAA COMPLIANT',
-                                  style: TextStyle(color: softGrey, fontSize: 11, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: softGrey,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 SizedBox(width: 16),
-                                Icon(Icons.lock_outline_rounded, size: 14, color: softGrey),
+                                Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 14,
+                                  color: softGrey,
+                                ),
                                 SizedBox(width: 6),
                                 Text(
                                   'SSL SECURED',
-                                  style: TextStyle(color: softGrey, fontSize: 11, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: softGrey,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
@@ -303,7 +375,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   onTap: () {},
                                   child: const Text(
                                     'PRIVACY',
-                                    style: TextStyle(color: softGrey, fontSize: 11, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: softGrey,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -311,7 +387,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   onTap: () {},
                                   child: const Text(
                                     'TERMS',
-                                    style: TextStyle(color: softGrey, fontSize: 11, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: softGrey,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -330,9 +410,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildLoginForm(Color primaryTeal, Color darkSlate, Color softGrey, Color borderGrey) {
+  Widget _buildLoginForm(
+    Color primaryTeal,
+    Color darkSlate,
+    Color softGrey,
+    Color borderGrey,
+  ) {
     return Container(
-      key: const ValueKey('LoginForm'), // Unique Key for AnimatedSwitcher placed on Container
+      key: const ValueKey(
+        'LoginForm',
+      ), // Unique Key for AnimatedSwitcher placed on Container
       child: Form(
         key: _loginFormKey,
         child: Column(
@@ -351,11 +438,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 8),
             Text(
               'Enter your credentials to access your clinical dashboard.',
-              style: TextStyle(
-                color: softGrey,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: TextStyle(color: softGrey, fontSize: 14, height: 1.5),
             ),
             const SizedBox(height: 36),
             _buildLabel('EMAIL ADDRESS'),
@@ -365,9 +448,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               icon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               validator: (val) {
-                if (val == null || val.isEmpty) return 'Please enter your email';
+                if (val == null || val.isEmpty)
+                  return 'Please enter your email';
                 // ignore: deprecated_member_use
-                if (!RegExp(r'^^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) {
+                if (!RegExp(
+                  r'^^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(val)) {
                   return 'Please enter a valid email address';
                 }
                 return null;
@@ -399,13 +485,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               obscure: _obscurePassword,
               suffix: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: softGrey,
                   size: 18,
                 ),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
-              validator: (val) => val == null || val.isEmpty ? 'Please enter your password' : null,
+              validator: (val) => val == null || val.isEmpty
+                  ? 'Please enter your password'
+                  : null,
               onFieldSubmitted: (_) => _handleLogin(),
             ),
             const SizedBox(height: 16),
@@ -418,15 +509,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     value: _rememberMe,
                     activeColor: primaryTeal,
                     checkColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                    side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
-                    onChanged: (val) => setState(() => _rememberMe = val ?? false),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    side: const BorderSide(
+                      color: Color(0xFFCBD5E1),
+                      width: 1.5,
+                    ),
+                    onChanged: (val) =>
+                        setState(() => _rememberMe = val ?? false),
                   ),
                 ),
                 const SizedBox(width: 8),
                 const Text(
                   'Remember me',
-                  style: TextStyle(color: Color(0xFF475569), fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Color(0xFF475569),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -451,7 +552,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -496,7 +599,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Expanded(
                   child: _buildSocialButton(
                     onTap: () {},
-                    icon: const Icon(Icons.g_mobiledata_rounded, size: 26, color: Colors.red),
+                    icon: const Icon(
+                      Icons.g_mobiledata_rounded,
+                      size: 26,
+                      color: Colors.red,
+                    ),
                     label: 'Google',
                   ),
                 ),
@@ -504,7 +611,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Expanded(
                   child: _buildSocialButton(
                     onTap: () {},
-                    icon: const Icon(Icons.security_outlined, size: 16, color: Colors.blueGrey),
+                    icon: const Icon(
+                      Icons.security_outlined,
+                      size: 16,
+                      color: Colors.blueGrey,
+                    ),
                     label: 'SSO',
                   ),
                 ),
@@ -514,9 +625,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('New to MedAssist? ', style: TextStyle(color: softGrey, fontSize: 13)),
+                Text(
+                  'New to MedAssist? ',
+                  style: TextStyle(color: softGrey, fontSize: 13),
+                ),
                 GestureDetector(
-                  onTap: () => setState(() => _authView = 1), // Transition dynamically
+                  onTap: () =>
+                      setState(() => _authView = 1), // Transition dynamically
                   child: Text(
                     'Create an account',
                     style: TextStyle(
@@ -536,7 +651,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildSignupForm(Color primaryTeal, Color darkSlate, Color softGrey) {
     return Container(
-      key: const ValueKey('SignupForm'), // Unique Key for AnimatedSwitcher placed on Container
+      key: const ValueKey(
+        'SignupForm',
+      ), // Unique Key for AnimatedSwitcher placed on Container
       child: Form(
         key: _signupFormKey,
         child: Column(
@@ -555,11 +672,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 8),
             Text(
               'Get started with MedAssist for your clinical practice.',
-              style: TextStyle(
-                color: softGrey,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: TextStyle(color: softGrey, fontSize: 14, height: 1.5),
             ),
             const SizedBox(height: 32),
             _buildLabel('FULL NAME'),
@@ -567,7 +680,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               controller: _nameController,
               hint: 'Dr. John Doe',
               icon: Icons.person_outline_rounded,
-              validator: (val) => val == null || val.isEmpty ? 'Please enter your name' : null,
+              validator: (val) =>
+                  val == null || val.isEmpty ? 'Please enter your name' : null,
             ),
             const SizedBox(height: 20),
             _buildLabel('EMAIL ADDRESS'),
@@ -577,9 +691,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               icon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               validator: (val) {
-                if (val == null || val.isEmpty) return 'Please enter your email';
+                if (val == null || val.isEmpty)
+                  return 'Please enter your email';
                 // ignore: deprecated_member_use
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) {
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(val)) {
                   return 'Please enter a valid email address';
                 }
                 return null;
@@ -594,13 +711,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               obscure: _obscurePassword,
               suffix: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: const Color(0xFF64748B),
                   size: 20,
                 ),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
-              validator: (val) => val == null || val.length < 6 ? 'Password must be at least 6 characters' : null,
+              validator: (val) => val == null || val.length < 6
+                  ? 'Password must be at least 6 characters'
+                  : null,
               onFieldSubmitted: (_) => _handleSignup(),
             ),
             const SizedBox(height: 20),
@@ -612,15 +734,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               obscure: _obscureConfirmPassword,
               suffix: IconButton(
                 icon: Icon(
-                  _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscureConfirmPassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: const Color(0xFF64748B),
                   size: 20,
                 ),
-                onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                onPressed: () => setState(
+                  () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                ),
               ),
               validator: (val) {
-                if (val == null || val.isEmpty) return 'Please confirm your password';
-                if (val != _passwordController.text) return 'Passwords do not match';
+                if (val == null || val.isEmpty)
+                  return 'Please confirm your password';
+                if (val != _passwordController.text)
+                  return 'Passwords do not match';
                 return null;
               },
               onFieldSubmitted: (_) => _handleSignup(),
@@ -636,9 +764,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     value: _agreeTerms,
                     activeColor: primaryTeal,
                     checkColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                    side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
-                    onChanged: (val) => setState(() => _agreeTerms = val ?? false),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    side: const BorderSide(
+                      color: Color(0xFFCBD5E1),
+                      width: 1.5,
+                    ),
+                    onChanged: (val) =>
+                        setState(() => _agreeTerms = val ?? false),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -648,7 +782,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: RichText(
                       text: TextSpan(
                         text: 'I agree to the ',
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 13,
+                        ),
                         children: [
                           WidgetSpan(
                             alignment: PlaceholderAlignment.middle,
@@ -705,7 +842,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -729,9 +868,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Already have an account? ', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                Text(
+                  'Already have an account? ',
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                ),
                 GestureDetector(
-                  onTap: () => setState(() => _authView = 0), // Transition dynamically
+                  onTap: () =>
+                      setState(() => _authView = 0), // Transition dynamically
                   child: Text(
                     'Sign In',
                     style: TextStyle(
@@ -787,7 +930,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         suffixIcon: suffix,
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 13,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(6),
           borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
@@ -847,7 +993,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildDashboardPreview(Color primaryTeal, Color darkSlate, Color borderGrey) {
+  Widget _buildDashboardPreview(
+    Color primaryTeal,
+    Color darkSlate,
+    Color borderGrey,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -873,12 +1023,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   CircleAvatar(
                     radius: 14,
                     backgroundColor: primaryTeal.withValues(alpha: 0.1),
-                    child: Icon(Icons.analytics_outlined, color: primaryTeal, size: 14),
+                    child: Icon(
+                      Icons.analytics_outlined,
+                      color: primaryTeal,
+                      size: 14,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Clinical Insights',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: darkSlate),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: darkSlate,
+                    ),
                   ),
                 ],
               ),
@@ -890,7 +1048,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 child: const Text(
                   'ACTIVE',
-                  style: TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Color(0xFF10B981),
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -966,7 +1128,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildForgotPasswordForm(Color primaryTeal, Color darkSlate, Color softGrey) {
+  Widget _buildForgotPasswordForm(
+    Color primaryTeal,
+    Color darkSlate,
+    Color softGrey,
+  ) {
     return Container(
       key: const ValueKey('ForgotPasswordForm'),
       child: Form(
@@ -986,17 +1152,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              _otpSent 
+              _otpSent
                   ? 'We have sent a 6-digit numeric OTP to your email. Enter it below to verify your account.'
                   : 'Enter your registered email address below. We will send you a 6-digit numeric recovery verification OTP.',
-              style: TextStyle(
-                color: softGrey,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: TextStyle(color: softGrey, fontSize: 14, height: 1.5),
             ),
             const SizedBox(height: 28),
-            
+
             // EMAIL ADDRESS FIELD (Read-Only if OTP is already sent)
             _buildLabel('EMAIL ADDRESS'),
             _buildTextField(
@@ -1005,15 +1167,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               icon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               validator: (val) {
-                if (val == null || val.isEmpty) return 'Please enter your email';
+                if (val == null || val.isEmpty)
+                  return 'Please enter your email';
                 // ignore: deprecated_member_use
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) {
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(val)) {
                   return 'Please enter a valid email address';
                 }
                 return null;
               },
             ),
-            
+
             // STEP 2: DYNAMIC SECOND SECTION (Appears below in the same form on OTP send success)
             if (_otpSent) ...[
               const SizedBox(height: 18),
@@ -1024,7 +1189,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 icon: Icons.pin_outlined,
                 keyboardType: TextInputType.number,
                 validator: (val) {
-                  if (val == null || val.isEmpty) return 'Please enter the 6-digit OTP';
+                  if (val == null || val.isEmpty)
+                    return 'Please enter the 6-digit OTP';
                   if (val.length != 6 || int.tryParse(val) == null) {
                     return 'OTP must be exactly 6 numeric digits';
                   }
@@ -1032,9 +1198,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 },
               ),
             ],
-            
+
             const SizedBox(height: 28),
-            
+
             // PRIMARY ACTION BUTTON (Toggles between Send OTP and Verify OTP)
             Container(
               width: double.infinity,
@@ -1053,12 +1219,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           setState(() {
                             _isLoading = true;
                           });
-                          
+
                           if (!_otpSent) {
                             // Step 1: Send Recovery OTP
-                            final success = await ref.read(authControllerProvider.notifier).forgotPassword(
-                                  email: _emailController.text,
-                                );
+                            final success = await ref
+                                .read(authControllerProvider.notifier)
+                                .forgotPassword(email: _emailController.text);
 
                             if (mounted) {
                               setState(() {
@@ -1068,7 +1234,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Recovery code sent successfully! Please check your email.'),
+                                    content: Text(
+                                      'Recovery code sent successfully! Please check your email.',
+                                    ),
                                     behavior: SnackBarBehavior.floating,
                                     backgroundColor: Color(0xFF0D9488),
                                   ),
@@ -1077,7 +1245,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   _otpSent = true;
                                 });
                               } else {
-                                final error = ref.read(authControllerProvider).errorMessage ?? 'Request failed';
+                                final error =
+                                    ref
+                                        .read(authControllerProvider)
+                                        .errorMessage ??
+                                    'Request failed';
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(error),
@@ -1089,7 +1261,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             }
                           } else {
                             // Step 2: Verify OTP
-                            final resetToken = await ref.read(authControllerProvider.notifier).verifyResetOtp(
+                            final resetToken = await ref
+                                .read(authControllerProvider.notifier)
+                                .verifyResetOtp(
                                   email: _emailController.text,
                                   otp: _otpController.text,
                                 );
@@ -1102,17 +1276,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               if (resetToken != null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('OTP verified successfully! Create your new password now.'),
+                                    content: Text(
+                                      'OTP verified successfully! Create your new password now.',
+                                    ),
                                     behavior: SnackBarBehavior.floating,
                                     backgroundColor: Color(0xFF0D9488),
                                   ),
                                 );
                                 setState(() {
                                   _resetToken = resetToken;
-                                  _authView = 3; // Navigate directly to reset password view
+                                  _authView =
+                                      3; // Navigate directly to reset password view
                                 });
                               } else {
-                                final error = ref.read(authControllerProvider).errorMessage ?? 'Invalid OTP code';
+                                final error =
+                                    ref
+                                        .read(authControllerProvider)
+                                        .errorMessage ??
+                                    'Invalid OTP code';
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(error),
@@ -1128,7 +1309,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -1136,17 +1319,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : Text(
                         _otpSent ? 'VERIFY OTP' : 'SEND RECOVERY OTP',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // BACK ACTION (Handles state cleaning on backing out)
             Center(
               child: InkWell(
@@ -1161,7 +1351,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.arrow_back_rounded, color: primaryTeal, size: 16),
+                    Icon(
+                      Icons.arrow_back_rounded,
+                      color: primaryTeal,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'BACK TO LOGIN',
@@ -1182,7 +1376,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildResetPasswordForm(Color primaryTeal, Color darkSlate, Color softGrey) {
+  Widget _buildResetPasswordForm(
+    Color primaryTeal,
+    Color darkSlate,
+    Color softGrey,
+  ) {
     return Container(
       key: const ValueKey('ResetPasswordForm'),
       child: Form(
@@ -1203,14 +1401,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 8),
             Text(
               'Your recovery code has been verified. Please enter your new secure password below.',
-              style: TextStyle(
-                color: softGrey,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: TextStyle(color: softGrey, fontSize: 14, height: 1.5),
             ),
             const SizedBox(height: 28),
-            
+
             _buildLabel('NEW SECURE PASSWORD'),
             _buildTextField(
               controller: _newPasswordController,
@@ -1219,24 +1413,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               obscure: _obscureNewPassword,
               suffix: IconButton(
                 icon: Icon(
-                  _obscureNewPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscureNewPassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: const Color(0xFF64748B),
                   size: 20,
                 ),
-                onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
+                onPressed: () =>
+                    setState(() => _obscureNewPassword = !_obscureNewPassword),
               ),
               validator: (val) {
-                if (val == null || val.isEmpty) return 'Please enter a new password';
-                if (val.length < 8) return 'Password must be at least 8 characters';
+                if (val == null || val.isEmpty)
+                  return 'Please enter a new password';
+                if (val.length < 8)
+                  return 'Password must be at least 8 characters';
                 return null;
               },
               onFieldSubmitted: (_) async {
                 // Allow enter key to submit
               },
             ),
-            
+
             const SizedBox(height: 28),
-            
+
             Container(
               width: double.infinity,
               height: 48,
@@ -1254,8 +1453,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           setState(() {
                             _isLoading = true;
                           });
-                          
-                          final resetSuccess = await ref.read(authControllerProvider.notifier).resetPassword(
+
+                          final resetSuccess = await ref
+                              .read(authControllerProvider.notifier)
+                              .resetPassword(
                                 resetToken: _resetToken ?? '',
                                 newPassword: _newPasswordController.text,
                               );
@@ -1268,7 +1469,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             if (resetSuccess) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Password reset successful! You can now log in with your new password.'),
+                                  content: Text(
+                                    'Password reset successful! You can now log in with your new password.',
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                   backgroundColor: Color(0xFF0D9488),
                                 ),
@@ -1281,7 +1484,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 _authView = 0; // Return to login view
                               });
                             } else {
-                              final error = ref.read(authControllerProvider).errorMessage ?? 'Reset failed';
+                              final error =
+                                  ref
+                                      .read(authControllerProvider)
+                                      .errorMessage ??
+                                  'Reset failed';
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(error),
@@ -1296,7 +1503,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -1304,17 +1513,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Text(
                         'SUBMIT PASSWORD RESET',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // BACK ACTION (Handles state cleaning on backing out)
             Center(
               child: InkWell(
@@ -1330,7 +1546,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.arrow_back_rounded, color: primaryTeal, size: 16),
+                    Icon(
+                      Icons.arrow_back_rounded,
+                      color: primaryTeal,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'BACK TO LOGIN',

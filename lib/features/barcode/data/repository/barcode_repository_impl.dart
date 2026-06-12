@@ -10,7 +10,10 @@ class BarcodeRepositoryImpl implements BarcodeRepository {
   BarcodeRepositoryImpl(this._remoteDataSource);
 
   @override
-  Future<Uint8List> generateBarcode({required String text, String type = 'code128'}) {
+  Future<Uint8List> generateBarcode({
+    required String text,
+    String type = 'code128',
+  }) {
     return _remoteDataSource.generateBarcode(text: text, type: type);
   }
 

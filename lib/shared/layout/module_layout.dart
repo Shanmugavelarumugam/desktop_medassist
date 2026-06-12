@@ -4,7 +4,8 @@ class ModuleLayout extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? searchActions; // Left search bar and custom inline filters
-  final List<Widget>? primaryActions; // Right CTA buttons (e.g. "Add medicine", "Export")
+  final List<Widget>?
+  primaryActions; // Right CTA buttons (e.g. "Add medicine", "Export")
   final Widget body; // Central container (e.g. Data grid, List, Charts)
   final double padding;
 
@@ -59,10 +60,7 @@ class ModuleLayout extends StatelessWidget {
                 ],
               ),
               if (primaryActions != null)
-                Row(
-                  spacing: 12,
-                  children: primaryActions!,
-                ),
+                Row(spacing: 12, children: primaryActions!),
             ],
           ),
         ),

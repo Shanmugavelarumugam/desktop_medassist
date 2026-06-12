@@ -54,7 +54,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         } else {
           final filePath = file.path!;
           final csvText = await File(filePath).readAsString();
-          ref.read(importNotifierProvider.notifier).loadCsv(csvText, file.name, file.size);
+          ref
+              .read(importNotifierProvider.notifier)
+              .loadCsv(csvText, file.name, file.size);
         }
       }
     } catch (e) {
@@ -81,20 +83,27 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     if (_selectedFilePath == null || _selectedFileName == null) return;
 
     final notifier = ref.read(importNotifierProvider.notifier);
-    final success = await notifier.uploadPdfInvoice(_selectedFilePath!, _selectedFileName!);
+    final success = await notifier.uploadPdfInvoice(
+      _selectedFilePath!,
+      _selectedFileName!,
+    );
 
     if (mounted) {
       if (success) {
         _clearFileSelection();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('PDF invoice uploaded successfully! Import job created.'),
+            content: Text(
+              'PDF invoice uploaded successfully! Import job created.',
+            ),
             backgroundColor: Color(0xFF0D9488),
             behavior: SnackBarBehavior.floating,
           ),
         );
       } else {
-        final error = ref.read(importNotifierProvider).errorMessage ?? 'Failed to upload PDF';
+        final error =
+            ref.read(importNotifierProvider).errorMessage ??
+            'Failed to upload PDF';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error),
@@ -115,13 +124,16 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         _clearFileSelection();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Bulk import committed successfully! Inventory updated.'),
+            content: Text(
+              'Bulk import committed successfully! Inventory updated.',
+            ),
             backgroundColor: Color(0xFF0D9488),
             behavior: SnackBarBehavior.floating,
           ),
         );
       } else {
-        final error = ref.read(importNotifierProvider).errorMessage ?? 'Import failed';
+        final error =
+            ref.read(importNotifierProvider).errorMessage ?? 'Import failed';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error),
@@ -142,13 +154,17 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         _clearFileSelection();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('ETL CSV file uploaded and processed! Inventory updated.'),
+            content: Text(
+              'ETL CSV file uploaded and processed! Inventory updated.',
+            ),
             backgroundColor: Color(0xFF0D9488),
             behavior: SnackBarBehavior.floating,
           ),
         );
       } else {
-        final error = ref.read(importNotifierProvider).errorMessage ?? 'ETL processing failed';
+        final error =
+            ref.read(importNotifierProvider).errorMessage ??
+            'ETL processing failed';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error),
@@ -236,7 +252,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isInteractive ? 'CSV Import Mapping & ETL' : 'Bulk Import & OCR',
+                      isInteractive
+                          ? 'CSV Import Mapping & ETL'
+                          : 'Bulk Import & OCR',
                       style: const TextStyle(
                         color: textDark,
                         fontSize: 28,
@@ -249,7 +267,11 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                       isInteractive
                           ? 'Map your CSV headers, select duplicate strategies, and preview validation summary.'
                           : 'Upload supplier invoices, CSV sheets, or PDF bills to bulk-import items and update stock.',
-                      style: const TextStyle(color: softGrey, fontSize: 14, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        color: softGrey,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -258,7 +280,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                     icon: const Icon(Icons.refresh, color: primaryTeal),
                     tooltip: 'Refresh history',
                     onPressed: () {
-                      ref.read(importNotifierProvider.notifier).loadImportHistory();
+                      ref
+                          .read(importNotifierProvider.notifier)
+                          .loadImportHistory();
                     },
                   ),
               ],
@@ -268,8 +292,21 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           // 2. MAIN SPLIT VIEW OR ETL FLOW WORKSPACE
           Expanded(
             child: isInteractive
-                ? _buildEtlFlowWorkspace(state, purchaseState, primaryTeal, textDark, softGrey, borderGrey)
-                : _buildIdleWorkspace(state, primaryTeal, textDark, softGrey, borderGrey),
+                ? _buildEtlFlowWorkspace(
+                    state,
+                    purchaseState,
+                    primaryTeal,
+                    textDark,
+                    softGrey,
+                    borderGrey,
+                  )
+                : _buildIdleWorkspace(
+                    state,
+                    primaryTeal,
+                    textDark,
+                    softGrey,
+                    borderGrey,
+                  ),
           ),
         ],
       ),
@@ -363,7 +400,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                       child: Container(
                         height: 220,
                         decoration: BoxDecoration(
-                          color: _isDragging ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                          color: _isDragging
+                              ? const Color(0xFFF0FDF4)
+                              : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _isDragging ? primaryTeal : borderGrey,
@@ -376,13 +415,17 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                _isPdfMode ? Icons.picture_as_pdf : Icons.upload_file_rounded,
+                                _isPdfMode
+                                    ? Icons.picture_as_pdf
+                                    : Icons.upload_file_rounded,
                                 size: 48,
                                 color: _isDragging ? primaryTeal : softGrey,
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                _isPdfMode ? 'Select PDF Invoice File' : 'Select CSV Sheet File',
+                                _isPdfMode
+                                    ? 'Select PDF Invoice File'
+                                    : 'Select CSV Sheet File',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -407,7 +450,10 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                   // Selected file summary (for PDF OCR only)
                   if (_selectedFileName != null && _isPdfMode) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(8),
@@ -415,7 +461,10 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle_outline, color: Color(0xFF2563EB)),
+                          const Icon(
+                            Icons.check_circle_outline,
+                            color: Color(0xFF2563EB),
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -434,13 +483,20 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   _selectedFileSizeStr ?? '',
-                                  style: TextStyle(color: softGrey, fontSize: 11),
+                                  style: TextStyle(
+                                    color: softGrey,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, color: Color(0xFFEF4444), size: 18),
+                            icon: const Icon(
+                              Icons.close,
+                              color: Color(0xFFEF4444),
+                              size: 18,
+                            ),
                             onPressed: _clearFileSelection,
                           ),
                         ],
@@ -455,7 +511,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                           backgroundColor: primaryTeal,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           elevation: 0,
                         ),
                         child: state.isUploading
@@ -464,12 +522,17 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Text(
                                 'Upload & Extract OCR',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
                               ),
                       ),
                     ),
@@ -516,12 +579,14 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                       ? Padding(
                           padding: const EdgeInsets.all(80.0),
                           child: Center(
-                            child: CircularProgressIndicator(color: primaryTeal),
+                            child: CircularProgressIndicator(
+                              color: primaryTeal,
+                            ),
                           ),
                         )
                       : state.importJobs.isEmpty
-                          ? _buildEmptyState()
-                          : _buildJobsTable(state.importJobs),
+                      ? _buildEmptyState()
+                      : _buildJobsTable(state.importJobs),
                 ],
               ),
             ),
@@ -558,16 +623,27 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.table_chart, color: Color(0xFF2563EB), size: 20),
+                  const Icon(
+                    Icons.table_chart,
+                    color: Color(0xFF2563EB),
+                    size: 20,
+                  ),
                   const SizedBox(width: 12),
                   Text(
                     state.fileName ?? 'CSV File',
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A), fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E3A8A),
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '(${state.fileSizeStr})',
-                    style: const TextStyle(color: Color(0xFF3B82F6), fontSize: 13),
+                    style: const TextStyle(
+                      color: Color(0xFF3B82F6),
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Container(
@@ -580,11 +656,17 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                   const SizedBox(width: 6),
                   Text(
                     'Parsed ${state.parsedCsvData.length} rows — ${state.csvHeaders.length} columns detected',
-                    style: const TextStyle(color: Color(0xFF047857), fontWeight: FontWeight.w600, fontSize: 13),
+                    style: const TextStyle(
+                      color: Color(0xFF047857),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                   const Spacer(),
                   TextButton.icon(
-                    style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF4444)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFEF4444),
+                    ),
                     icon: const Icon(Icons.delete_outline, size: 18),
                     label: const Text('Clear File'),
                     onPressed: _clearFileSelection,
@@ -596,7 +678,12 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
             // Scrollable Panels
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(40, 32, 40, 140), // extra padding for bottom stats bar
+                padding: const EdgeInsets.fromLTRB(
+                  40,
+                  32,
+                  40,
+                  140,
+                ), // extra padding for bottom stats bar
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -646,7 +733,10 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                                     child: SingleChildScrollView(
                                       scrollDirection: Axis.horizontal,
                                       child: DataTable(
-                                        headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+                                        headingRowColor:
+                                            WidgetStateProperty.all(
+                                              const Color(0xFFF8FAFC),
+                                            ),
                                         horizontalMargin: 24,
                                         columnSpacing: 28,
                                         dividerThickness: 1,
@@ -654,7 +744,11 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                                           return DataColumn(
                                             label: Text(
                                               h.toUpperCase(),
-                                              style: TextStyle(fontWeight: FontWeight.bold, color: softGrey, fontSize: 11),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: softGrey,
+                                                fontSize: 11,
+                                              ),
                                             ),
                                           );
                                         }).toList(),
@@ -664,7 +758,10 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                                               return DataCell(
                                                 Text(
                                                   row[h] ?? '',
-                                                  style: TextStyle(color: textDark, fontSize: 13),
+                                                  style: TextStyle(
+                                                    color: textDark,
+                                                    fontSize: 13,
+                                                  ),
                                                 ),
                                               );
                                             }).toList(),
@@ -778,15 +875,30 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                             Divider(height: 32, color: borderGrey),
 
                             // OPTIONS: Supplier, Duplicates, Barcodes
-                            _buildSupplierDropdown(state.supplier, supplierList, textDark, softGrey, borderGrey),
+                            _buildSupplierDropdown(
+                              state.supplier,
+                              supplierList,
+                              textDark,
+                              softGrey,
+                              borderGrey,
+                            ),
                             const SizedBox(height: 16),
-                            _buildDuplicateDropdown(state.duplicateStrategy, textDark, softGrey, borderGrey),
+                            _buildDuplicateDropdown(
+                              state.duplicateStrategy,
+                              textDark,
+                              softGrey,
+                              borderGrey,
+                            ),
                             const SizedBox(height: 16),
 
                             // BARCODE OPTIONS COLLAPSIBLE OR SECTION
                             Text(
                               'Barcode Processing Options',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: textDark),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: textDark,
+                              ),
                             ),
                             const SizedBox(height: 8),
                             _buildBarcodeOptionsSwitches(state.barcodeOptions),
@@ -798,12 +910,27 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 TextButton.icon(
-                                  style: TextButton.styleFrom(foregroundColor: primaryTeal),
-                                  icon: const Icon(Icons.auto_awesome, size: 16),
-                                  label: const Text('Reset to AI suggestions', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: primaryTeal,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.auto_awesome,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    'Reset to AI suggestions',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   onPressed: () {
-                                    ref.read(importNotifierProvider.notifier).suggestMapping(headers);
-                                    ref.read(importNotifierProvider.notifier).runDryRunAnalysis();
+                                    ref
+                                        .read(importNotifierProvider.notifier)
+                                        .suggestMapping(headers);
+                                    ref
+                                        .read(importNotifierProvider.notifier)
+                                        .runDryRunAnalysis();
                                   },
                                 ),
                               ],
@@ -848,17 +975,27 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: textDark),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: textDark,
+            ),
           ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
             initialValue: currentValue,
-            hint: const Text('Unmapped', style: TextStyle(fontSize: 13, color: softGrey)),
+            hint: const Text(
+              'Unmapped',
+              style: TextStyle(fontSize: 13, color: softGrey),
+            ),
             isExpanded: true,
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
                 borderSide: const BorderSide(color: borderGrey, width: 1),
@@ -875,14 +1012,13 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                 child: Text('Unmapped', style: TextStyle(color: softGrey)),
               ),
               ...headers.map((h) {
-                return DropdownMenuItem<String>(
-                  value: h,
-                  child: Text(h),
-                );
+                return DropdownMenuItem<String>(value: h, child: Text(h));
               }),
             ],
             onChanged: (val) {
-              ref.read(importNotifierProvider.notifier).setMapping(fieldKey, val);
+              ref
+                  .read(importNotifierProvider.notifier)
+                  .setMapping(fieldKey, val);
             },
           ),
         ],
@@ -891,13 +1027,23 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   }
 
   // WIDGET: Supplier Selector Dropdown
-  Widget _buildSupplierDropdown(String currentValue, List<dynamic> suppliers, Color textDark, Color softGrey, Color borderGrey) {
+  Widget _buildSupplierDropdown(
+    String currentValue,
+    List<dynamic> suppliers,
+    Color textDark,
+    Color softGrey,
+    Color borderGrey,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Associated Supplier',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: textDark),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            color: textDark,
+          ),
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
@@ -906,7 +1052,10 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: borderGrey, width: 1),
@@ -914,10 +1063,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           ),
           style: TextStyle(color: textDark, fontSize: 13),
           items: [
-            const DropdownMenuItem<String>(
-              value: 'None',
-              child: Text('None'),
-            ),
+            const DropdownMenuItem<String>(value: 'None', child: Text('None')),
             ...suppliers.map((sup) {
               return DropdownMenuItem<String>(
                 value: sup.name,
@@ -926,7 +1072,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
             }),
           ],
           onChanged: (val) {
-            if (val != null) ref.read(importNotifierProvider.notifier).setSupplier(val);
+            if (val != null) {
+              ref.read(importNotifierProvider.notifier).setSupplier(val);
+            }
           },
         ),
       ],
@@ -934,13 +1082,22 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   }
 
   // WIDGET: Duplicate Strategy Selector Dropdown
-  Widget _buildDuplicateDropdown(String currentValue, Color textDark, Color softGrey, Color borderGrey) {
+  Widget _buildDuplicateDropdown(
+    String currentValue,
+    Color textDark,
+    Color softGrey,
+    Color borderGrey,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Duplicate Strategy',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: textDark),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            color: textDark,
+          ),
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
@@ -949,7 +1106,10 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: borderGrey, width: 1),
@@ -957,11 +1117,21 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           ),
           style: TextStyle(color: textDark, fontSize: 13),
           items: const [
-            DropdownMenuItem<String>(value: 'Skip', child: Text('Skip duplicate matches')),
-            DropdownMenuItem<String>(value: 'Overwrite', child: Text('Overwrite existing matches')),
+            DropdownMenuItem<String>(
+              value: 'Skip',
+              child: Text('Skip duplicate matches'),
+            ),
+            DropdownMenuItem<String>(
+              value: 'Overwrite',
+              child: Text('Overwrite existing matches'),
+            ),
           ],
           onChanged: (val) {
-            if (val != null) ref.read(importNotifierProvider.notifier).setDuplicateStrategy(val);
+            if (val != null) {
+              ref
+                  .read(importNotifierProvider.notifier)
+                  .setDuplicateStrategy(val);
+            }
           },
         ),
       ],
@@ -1007,13 +1177,22 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     );
   }
 
-  Widget _buildMiniSwitchRow({required String label, required bool value, required ValueChanged<bool> onChanged}) {
+  Widget _buildMiniSwitchRow({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF475569)))),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+            ),
+          ),
           SizedBox(
             height: 24,
             width: 44,
@@ -1032,47 +1211,69 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   }
 
   // WIDGET: Bottom statistics ETL summary bar
-  Widget _buildBottomStatsBar(ImportState state, Color primaryTeal, Color borderGrey) {
+  Widget _buildBottomStatsBar(
+    ImportState state,
+    Color primaryTeal,
+    Color borderGrey,
+  ) {
     final summary = state.analysisSummary;
 
     final rawErrors = summary?['errors'];
     final int errorCount = rawErrors is List
         ? rawErrors.length
-        : (rawErrors is num ? rawErrors.toInt() : int.tryParse(rawErrors.toString()) ?? 0);
+        : (rawErrors is num
+              ? rawErrors.toInt()
+              : int.tryParse(rawErrors.toString()) ?? 0);
 
     final rawDuplicates = summary?['duplicates'];
     final int duplicateCount = rawDuplicates is List
         ? rawDuplicates.length
-        : (rawDuplicates is num ? rawDuplicates.toInt() : int.tryParse(rawDuplicates.toString()) ?? 0);
+        : (rawDuplicates is num
+              ? rawDuplicates.toInt()
+              : int.tryParse(rawDuplicates.toString()) ?? 0);
 
     final rawReadyCount = summary?['readyCount'];
     final int readyCount = rawReadyCount is List
         ? rawReadyCount.length
-        : (rawReadyCount is num ? rawReadyCount.toInt() : int.tryParse(rawReadyCount.toString()) ?? 0);
+        : (rawReadyCount is num
+              ? rawReadyCount.toInt()
+              : int.tryParse(rawReadyCount.toString()) ?? 0);
 
     final rawNewCount = summary?['new'];
     final int newCount = rawNewCount is List
         ? rawNewCount.length
-        : (rawNewCount is num ? rawNewCount.toInt() : int.tryParse(rawNewCount.toString()) ?? 0);
+        : (rawNewCount is num
+              ? rawNewCount.toInt()
+              : int.tryParse(rawNewCount.toString()) ?? 0);
 
     final rawValidBarcodes = summary?['validBarcodes'];
     final int validBarcodes = rawValidBarcodes is List
         ? rawValidBarcodes.length
-        : (rawValidBarcodes is num ? rawValidBarcodes.toInt() : int.tryParse(rawValidBarcodes.toString()) ?? 0);
+        : (rawValidBarcodes is num
+              ? rawValidBarcodes.toInt()
+              : int.tryParse(rawValidBarcodes.toString()) ?? 0);
 
     final rawAutoGenBarcodes = summary?['autoGenBarcodes'];
     final int autoGenBarcodes = rawAutoGenBarcodes is List
         ? rawAutoGenBarcodes.length
-        : (rawAutoGenBarcodes is num ? rawAutoGenBarcodes.toInt() : int.tryParse(rawAutoGenBarcodes.toString()) ?? 0);
+        : (rawAutoGenBarcodes is num
+              ? rawAutoGenBarcodes.toInt()
+              : int.tryParse(rawAutoGenBarcodes.toString()) ?? 0);
 
-    final isMapped = state.columnMapping['nameColumn'] != null && state.columnMapping['qtyColumn'] != null;
+    final isMapped =
+        state.columnMapping['nameColumn'] != null &&
+        state.columnMapping['qtyColumn'] != null;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: borderGrey, width: 1.5)),
         boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4)),
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, -4),
+          ),
         ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
@@ -1087,14 +1288,21 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                 const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2.2, valueColor: AlwaysStoppedAnimation(Color(0xFF0F766E))),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    valueColor: AlwaysStoppedAnimation(Color(0xFF0F766E)),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   state.currentStep == 'importing'
                       ? 'Executing transaction and processing queue... ${(state.uploadProgress * 100).toInt()}%'
                       : 'Importing records...',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F766E)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Color(0xFF0F766E),
+                  ),
                 ),
               ],
             ),
@@ -1119,22 +1327,45 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                         spacing: 16,
                         runSpacing: 8,
                         children: [
-                          _buildStatBadge('● $readyCount rows ready to import', const Color(0xFF10B981)),
                           _buildStatBadge(
-                            isMapped ? '● Required fields mapped' : '● Name + Stock column required',
-                            isMapped ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                            '● $readyCount rows ready to import',
+                            const Color(0xFF10B981),
                           ),
-                          _buildStatBadge('● $validBarcodes valid barcodes - $autoGenBarcodes auto-gen', const Color(0xFF2563EB)),
-                          _buildStatBadge('● Supplier: ${state.supplier}', const Color(0xFF64748B)),
-                          _buildStatBadge('● $duplicateCount duplicates — handling: ${state.duplicateStrategy}', const Color(0xFFF59E0B)),
+                          _buildStatBadge(
+                            isMapped
+                                ? '● Required fields mapped'
+                                : '● Name + Stock column required',
+                            isMapped
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFEF4444),
+                          ),
+                          _buildStatBadge(
+                            '● $validBarcodes valid barcodes - $autoGenBarcodes auto-gen',
+                            const Color(0xFF2563EB),
+                          ),
+                          _buildStatBadge(
+                            '● Supplier: ${state.supplier}',
+                            const Color(0xFF64748B),
+                          ),
+                          _buildStatBadge(
+                            '● $duplicateCount duplicates — handling: ${state.duplicateStrategy}',
+                            const Color(0xFFF59E0B),
+                          ),
                           if (errorCount > 0)
-                            _buildStatBadge('● $errorCount rows with invalid data will be skipped', const Color(0xFFEF4444)),
+                            _buildStatBadge(
+                              '● $errorCount rows with invalid data will be skipped',
+                              const Color(0xFFEF4444),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Will import: $newCount new — $duplicateCount duplicates — $errorCount errors = $readyCount records',
-                        style: const TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Color(0xFF475569),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -1145,24 +1376,40 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                   children: [
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       onPressed: _clearFileSelection,
-                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF0FDF4),
                         foregroundColor: const Color(0xFF166534),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                           side: const BorderSide(color: Color(0xFFBBF7D0)),
                         ),
                       ),
-                      onPressed: (!isMapped || readyCount == 0) ? null : _startLegacyImport,
+                      onPressed: (!isMapped || readyCount == 0)
+                          ? null
+                          : _startLegacyImport,
                       child: Text(
                         'Import (Legacy) — $readyCount Records',
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -1173,10 +1420,17 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryTeal,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      onPressed: (!isMapped || readyCount == 0) ? null : _startEtlImport,
+                      onPressed: (!isMapped || readyCount == 0)
+                          ? null
+                          : _startEtlImport,
                       child: Text(
                         'Upload as File (ETL) — $readyCount Records',
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -1201,7 +1455,11 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+        ),
       ),
     );
   }
@@ -1257,7 +1515,11 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       child: Center(
         child: Text(
           'No bulk imports performed yet.',
-          style: TextStyle(color: Color(0xFF64748B), fontSize: 15, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -1291,10 +1553,13 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: jobs.length,
-          separatorBuilder: (context, index) => const Divider(height: 1, color: borderGrey),
+          separatorBuilder: (context, index) =>
+              const Divider(height: 1, color: borderGrey),
           itemBuilder: (context, index) {
             final job = jobs[index];
-            final typeText = job.importType == 'SUPPLIER_INVOICE' ? 'Supplier CSV' : 'PDF Invoice';
+            final typeText = job.importType == 'SUPPLIER_INVOICE'
+                ? 'Supplier CSV'
+                : 'PDF Invoice';
 
             // Build remark text based on status
             String remarks;
@@ -1314,8 +1579,13 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               onEnter: (_) => setState(() => _hoveredRowIndex = index),
               onExit: (_) => setState(() => _hoveredRowIndex = null),
               child: Container(
-                color: _hoveredRowIndex == index ? const Color(0xFFF8FAFC) : Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                color: _hoveredRowIndex == index
+                    ? const Color(0xFFF8FAFC)
+                    : Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Row(
                   children: [
                     // Upload Date
@@ -1323,7 +1593,11 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                       flex: 3,
                       child: Text(
                         _formatDate(job.createdAt),
-                        style: const TextStyle(color: textDark, fontSize: 13, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          color: textDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                     // Type
@@ -1331,7 +1605,11 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                       flex: 3,
                       child: Text(
                         typeText,
-                        style: const TextStyle(color: textDark, fontSize: 13, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          color: textDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     // Status Chip
@@ -1347,7 +1625,11 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                       flex: 4,
                       child: Text(
                         remarks,
-                        style: TextStyle(color: remarkColor, fontSize: 12, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          color: remarkColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),

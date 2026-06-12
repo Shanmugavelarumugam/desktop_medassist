@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../domain/models/purchase.dart';
 import '../notifier/purchase_notifier.dart';
 
-class CreateSupplierDialog extends ConsumerStatefulWidget {
-  const CreateSupplierDialog({super.key});
+class EditSupplierDialog extends ConsumerStatefulWidget {
+  final Supplier supplier;
+  const EditSupplierDialog({super.key, required this.supplier});
 
   @override
-  ConsumerState<CreateSupplierDialog> createState() => _CreateSupplierDialogState();
+  ConsumerState<EditSupplierDialog> createState() => _EditSupplierDialogState();
 }
 
-class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
+class _EditSupplierDialogState extends ConsumerState<EditSupplierDialog>
     with SingleTickerProviderStateMixin {
   static const _primaryTeal = Color(0xFF0D9488);
   static const _primaryLight = Color(0xFF14B8A6);
@@ -26,24 +28,25 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
   late TabController _tabController;
   int _activeTab = 0;
 
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _gstController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _contactPersonController = TextEditingController();
-  String _supplierType = 'DISTRIBUTOR';
+  late TextEditingController _nameController;
+  late TextEditingController _phoneController;
+  late TextEditingController _emailController;
+  late TextEditingController _gstController;
+  late TextEditingController _addressController;
+  late TextEditingController _contactPersonController;
+  late String _supplierType;
+  late String _status;
 
-  final _drugLicenseController = TextEditingController();
+  late TextEditingController _drugLicenseController;
   DateTime? _expiryDate;
-  bool _isPreferred = false;
-  final _leadTimeController = TextEditingController(text: '7');
-  final _paymentTermsController = TextEditingController(text: '30');
-  final _creditLimitController = TextEditingController();
+  late bool _isPreferred;
+  late TextEditingController _leadTimeController;
+  late TextEditingController _paymentTermsController;
+  late TextEditingController _creditLimitController;
 
-  final _bankNameController = TextEditingController();
-  final _accountNumberController = TextEditingController();
-  final _ifscController = TextEditingController();
+  late TextEditingController _bankNameController;
+  late TextEditingController _accountNumberController;
+  late TextEditingController _ifscController;
 
   bool _submitting = false;
 
@@ -58,6 +61,31 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
         setState(() => _activeTab = _tabController.index);
       }
     });
+
+    _nameController = TextEditingController(text: widget.supplier.name);
+    _phoneController = TextEditingController(text: widget.supplier.phone);
+    _emailController = TextEditingController(text: widget.supplier.email);
+    _gstController = TextEditingController(text: widget.supplier.gstNumber);
+    _addressController = TextEditingController(text: widget.supplier.address);
+    _contactPersonController = TextEditingController(text: widget.supplier.contactPerson ?? '');
+    _supplierType = widget.supplier.supplierType ?? 'DISTRIBUTOR';
+    _status = widget.supplier.status.toUpperCase();
+    if (_status != 'ACTIVE' && _status != 'INACTIVE' && _status != 'BLACKLISTED') {
+      _status = 'ACTIVE';
+    }
+
+    _drugLicenseController = TextEditingController(text: widget.supplier.drugLicenseNumber ?? '');
+    _expiryDate = widget.supplier.licenseExpiry != null && widget.supplier.licenseExpiry!.isNotEmpty
+        ? DateTime.tryParse(widget.supplier.licenseExpiry!)
+        : null;
+    _isPreferred = widget.supplier.isPreferred;
+    _leadTimeController = TextEditingController(text: widget.supplier.leadTimeDays.toString());
+    _paymentTermsController = TextEditingController(text: widget.supplier.paymentTermsDays.toString());
+    _creditLimitController = TextEditingController(text: widget.supplier.creditLimit?.toString() ?? '');
+
+    _bankNameController = TextEditingController(text: widget.supplier.bankName ?? '');
+    _accountNumberController = TextEditingController(text: widget.supplier.accountNumber ?? '');
+    _ifscController = TextEditingController(text: widget.supplier.ifscCode ?? '');
   }
 
   @override
@@ -101,50 +129,45 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
     if (picked != null) setState(() => _expiryDate = picked);
   }
 
-  void _submit() async {
-    if (_formKey.currentState!.validate()) {
+  void _submit() {
+    final form = _formKey.currentState;
+    if (form != null && form.validate()) {
       setState(() => _submitting = true);
-      final success = await ref
-          .read(purchaseNotifierProvider.notifier)
-          .createSupplier(
-            name: _nameController.text.trim(),
-            phone: _phoneController.text.trim(),
-            email: _emailController.text.trim(),
-            gstNumber: _gstController.text.trim().toUpperCase(),
-            address: _addressController.text.trim(),
-            supplierType: _supplierType,
-            contactPerson: _contactPersonController.text.trim().isEmpty
-                ? null
-                : _contactPersonController.text.trim(),
-            drugLicenseNumber: _drugLicenseController.text.trim().isEmpty
-                ? null
-                : _drugLicenseController.text.trim(),
-            licenseExpiry: _expiryDate?.toIso8601String(),
-            isPreferred: _isPreferred,
-            leadTimeDays: int.tryParse(_leadTimeController.text) ?? 7,
-            paymentTermsDays: int.tryParse(_paymentTermsController.text) ?? 30,
-            creditLimit: double.tryParse(_creditLimitController.text),
-            bankName: _bankNameController.text.trim().isEmpty
-                ? null
-                : _bankNameController.text.trim(),
-            accountNumber: _accountNumberController.text.trim().isEmpty
-                ? null
-                : _accountNumberController.text.trim(),
-            ifscCode: _ifscController.text.trim().isEmpty
-                ? null
-                : _ifscController.text.trim().toUpperCase(),
-          );
-      if (mounted) {
-        setState(() => _submitting = false);
-        if (success) {
-          Navigator.of(context).pop(true);
-          _showSnack('Supplier registered successfully!', _primaryTeal);
-        } else {
-          final error =
-              ref.read(purchaseNotifierProvider).errorMessage ?? 'Failed to create supplier';
-          _showSnack(error, _danger);
-        }
-      }
+
+      final updated = widget.supplier.copyWith(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        email: _emailController.text.trim(),
+        gstNumber: _gstController.text.trim().toUpperCase(),
+        address: _addressController.text.trim(),
+        supplierType: _supplierType,
+        contactPerson: _contactPersonController.text.trim().isEmpty
+            ? null
+            : _contactPersonController.text.trim(),
+        status: _status,
+        drugLicenseNumber: _drugLicenseController.text.trim().isEmpty
+            ? null
+            : _drugLicenseController.text.trim(),
+        licenseExpiry: _expiryDate?.toIso8601String(),
+        isPreferred: _isPreferred,
+        leadTimeDays: int.tryParse(_leadTimeController.text) ?? 7,
+        paymentTermsDays: int.tryParse(_paymentTermsController.text) ?? 30,
+        creditLimit: double.tryParse(_creditLimitController.text),
+        bankName: _bankNameController.text.trim().isEmpty
+            ? null
+            : _bankNameController.text.trim(),
+        accountNumber: _accountNumberController.text.trim().isEmpty
+            ? null
+            : _accountNumberController.text.trim(),
+        ifscCode: _ifscController.text.trim().isEmpty
+            ? null
+            : _ifscController.text.trim().toUpperCase(),
+      );
+
+      ref.read(purchaseNotifierProvider.notifier).editSupplierLocal(updated);
+      setState(() => _submitting = false);
+      Navigator.of(context).pop(true);
+      _showSnack('Supplier updated successfully!', _primaryTeal);
     } else {
       _showSnack('Please correct the validation errors in the form.', _danger);
     }
@@ -225,14 +248,14 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.person_add_rounded, color: Colors.white, size: 22),
+                child: const Icon(Icons.edit_outlined, color: Colors.white, size: 22),
               ),
               const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Register New Supplier',
+                    'Edit Supplier Details',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -242,7 +265,7 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Add a new supplier to your procurement network',
+                    widget.supplier.name,
                     style: TextStyle(fontSize: 13, color: _textMuted),
                   ),
                 ],
@@ -359,7 +382,14 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
             ],
           ),
           const SizedBox(height: 6),
-          Container(width: 32, height: 3, decoration: BoxDecoration(color: _primaryTeal, borderRadius: BorderRadius.circular(2))),
+          Container(
+            width: 32,
+            height: 3,
+            decoration: BoxDecoration(
+              color: _primaryTeal,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           const SizedBox(height: 20),
           ...children,
         ],
@@ -376,21 +406,62 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
             Icons.info_outline_rounded,
             [
               _buildRow([
-                _buildField(label: 'Supplier Name', hint: 'e.g. Acme Pharmaceuticals Ltd', controller: _nameController, icon: Icons.store_rounded, required: true),
+                _buildField(
+                  label: 'Supplier Name',
+                  hint: 'e.g. Acme Pharmaceuticals Ltd',
+                  controller: _nameController,
+                  icon: Icons.store_rounded,
+                  required: true,
+                ),
                 const SizedBox(width: 16),
-                _buildDropdown(label: 'Supplier Type', value: _supplierType, icon: Icons.category_rounded, items: const ['WHOLESALER', 'DISTRIBUTOR', 'MANUFACTURER'], onChanged: (v) => setState(() => _supplierType = v)),
+                _buildDropdown(
+                  label: 'Supplier Type',
+                  value: _supplierType,
+                  icon: Icons.category_rounded,
+                  items: const ['WHOLESALER', 'DISTRIBUTOR', 'MANUFACTURER'],
+                  onChanged: (v) => setState(() => _supplierType = v),
+                ),
               ]),
               const SizedBox(height: 16),
               _buildRow([
-                _buildField(label: 'Contact Person', hint: 'e.g. John Doe', controller: _contactPersonController, icon: Icons.person_outline_rounded),
+                _buildField(
+                  label: 'Contact Person',
+                  hint: 'e.g. John Doe',
+                  controller: _contactPersonController,
+                  icon: Icons.person_outline_rounded,
+                ),
                 const SizedBox(width: 16),
-                _buildField(label: 'Phone Number', hint: 'e.g. +91 9876543210', controller: _phoneController, icon: Icons.phone_rounded, keyboardType: TextInputType.phone, required: true),
+                _buildDropdownStatus(),
               ]),
               const SizedBox(height: 16),
               _buildRow([
-                _buildField(label: 'Email Address', hint: 'e.g. orders@acme.com', controller: _emailController, icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, required: true),
+                _buildField(
+                  label: 'Phone Number',
+                  hint: 'e.g. +91 9876543210',
+                  controller: _phoneController,
+                  icon: Icons.phone_rounded,
+                  keyboardType: TextInputType.phone,
+                  required: true,
+                ),
                 const SizedBox(width: 16),
-                _buildField(label: 'GST Number', hint: 'e.g. 22AAAAA1111A1Z1', controller: _gstController, icon: Icons.receipt_long_outlined, required: true),
+                _buildField(
+                  label: 'Email Address',
+                  hint: 'e.g. orders@acme.com',
+                  controller: _emailController,
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  required: true,
+                ),
+              ]),
+              const SizedBox(height: 16),
+              _buildRow([
+                _buildField(
+                  label: 'GST Number',
+                  hint: 'e.g. 22AAAAA1111A1Z1',
+                  controller: _gstController,
+                  icon: Icons.receipt_long_outlined,
+                  required: true,
+                ),
               ]),
               const SizedBox(height: 16),
               _buildRow([
@@ -422,9 +493,20 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
             Icons.verified_outlined,
             [
               _buildRow([
-                _buildField(label: 'Drug License Number', hint: 'e.g. DL-123456', controller: _drugLicenseController, icon: Icons.assignment_outlined),
+                _buildField(
+                  label: 'Drug License Number',
+                  hint: 'e.g. DL-123456',
+                  controller: _drugLicenseController,
+                  icon: Icons.assignment_outlined,
+                ),
                 const SizedBox(width: 16),
-                _buildDateField(label: 'License Expiry Date', value: expiryText, icon: Icons.calendar_month_outlined, onTap: () => _selectExpiryDate(context), hasValue: _expiryDate != null),
+                _buildDateField(
+                  label: 'License Expiry Date',
+                  value: expiryText,
+                  icon: Icons.calendar_month_outlined,
+                  onTap: () => _selectExpiryDate(context),
+                  hasValue: _expiryDate != null,
+                ),
               ]),
             ],
           ),
@@ -442,11 +524,29 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
             Icons.description_outlined,
             [
               _buildRow([
-                _buildField(label: 'Lead Time (Days)', hint: 'e.g. 7', controller: _leadTimeController, icon: Icons.schedule_outlined, keyboardType: TextInputType.number),
+                _buildField(
+                  label: 'Lead Time (Days)',
+                  hint: 'e.g. 7',
+                  controller: _leadTimeController,
+                  icon: Icons.schedule_outlined,
+                  keyboardType: TextInputType.number,
+                ),
                 const SizedBox(width: 16),
-                _buildField(label: 'Payment Terms (Days)', hint: 'e.g. 30', controller: _paymentTermsController, icon: Icons.payments_outlined, keyboardType: TextInputType.number),
+                _buildField(
+                  label: 'Payment Terms (Days)',
+                  hint: 'e.g. 30',
+                  controller: _paymentTermsController,
+                  icon: Icons.payments_outlined,
+                  keyboardType: TextInputType.number,
+                ),
                 const SizedBox(width: 16),
-                _buildField(label: 'Credit Limit (₹)', hint: 'e.g. 500000', controller: _creditLimitController, icon: Icons.account_balance_wallet_outlined, keyboardType: TextInputType.number),
+                _buildField(
+                  label: 'Credit Limit (₹)',
+                  hint: 'e.g. 500000',
+                  controller: _creditLimitController,
+                  icon: Icons.account_balance_wallet_outlined,
+                  keyboardType: TextInputType.number,
+                ),
               ]),
             ],
           ),
@@ -464,13 +564,28 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
             Icons.account_balance_outlined,
             [
               _buildRow([
-                _buildField(label: 'Bank Name', hint: 'e.g. State Bank of India', controller: _bankNameController, icon: Icons.business_outlined),
+                _buildField(
+                  label: 'Bank Name',
+                  hint: 'e.g. State Bank of India',
+                  controller: _bankNameController,
+                  icon: Icons.business_outlined,
+                ),
                 const SizedBox(width: 16),
-                _buildField(label: 'Account Number', hint: 'e.g. 1092837465', controller: _accountNumberController, icon: Icons.numbers_outlined),
+                _buildField(
+                  label: 'Account Number',
+                  hint: 'e.g. 1092837465',
+                  controller: _accountNumberController,
+                  icon: Icons.numbers_outlined,
+                ),
               ]),
               const SizedBox(height: 16),
               _buildRow([
-                _buildField(label: 'IFSC Code', hint: 'e.g. SBIN0001234', controller: _ifscController, icon: Icons.qr_code_rounded),
+                _buildField(
+                  label: 'IFSC Code',
+                  hint: 'e.g. SBIN0001234',
+                  controller: _ifscController,
+                  icon: Icons.qr_code_rounded,
+                ),
               ]),
             ],
           ),
@@ -634,7 +749,7 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
                           ),
                         )
                       : const Icon(Icons.check_rounded, size: 18),
-                  label: Text(_submitting ? 'Saving...' : 'Register Supplier',
+                  label: Text(_submitting ? 'Saving...' : 'Save Changes',
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
@@ -769,6 +884,56 @@ class _CreateSupplierDialogState extends ConsumerState<CreateSupplierDialog>
                 }).toList(),
                 onChanged: (v) {
                   if (v != null) onChanged(v);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownStatus() {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.circle_outlined, size: 14, color: _textMuted),
+              const SizedBox(width: 6),
+              const Text(
+                'Status',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: _textSub,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: _surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _border),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _status,
+                isExpanded: true,
+                style: const TextStyle(color: _textDark, fontSize: 14, fontWeight: FontWeight.w500),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: _textMuted),
+                items: const [
+                  DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
+                  DropdownMenuItem(value: 'INACTIVE', child: Text('Inactive')),
+                  DropdownMenuItem(value: 'BLACKLISTED', child: Text('Blacklisted')),
+                ],
+                onChanged: (v) {
+                  if (v != null) setState(() => _status = v);
                 },
               ),
             ),

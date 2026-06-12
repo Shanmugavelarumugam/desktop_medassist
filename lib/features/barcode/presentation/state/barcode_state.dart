@@ -34,9 +34,15 @@ class BarcodeState {
     return BarcodeState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage, // We explicitly set to null/new error
-      generatedBarcodeBytes: clearGeneratedBytes ? null : (generatedBarcodeBytes ?? this.generatedBarcodeBytes),
-      lookupResult: clearLookupResult ? null : (lookupResult ?? this.lookupResult),
-      lookupBarcode: clearLookupResult ? null : (lookupBarcode ?? this.lookupBarcode),
+      generatedBarcodeBytes: clearGeneratedBytes
+          ? null
+          : (generatedBarcodeBytes ?? this.generatedBarcodeBytes),
+      lookupResult: clearLookupResult
+          ? null
+          : (lookupResult ?? this.lookupResult),
+      lookupBarcode: clearLookupResult
+          ? null
+          : (lookupBarcode ?? this.lookupBarcode),
       selectedFormat: selectedFormat ?? this.selectedFormat,
       selectedMedicineId: selectedMedicineId ?? this.selectedMedicineId,
     );

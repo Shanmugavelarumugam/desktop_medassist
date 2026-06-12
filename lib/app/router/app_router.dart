@@ -65,21 +65,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RoutePaths.login,
-        builder: (context, state) => const LoginScreen(showSignUpInitially: false),
+        builder: (context, state) =>
+            const LoginScreen(showSignUpInitially: false),
       ),
       GoRoute(
         path: RoutePaths.signup,
-        builder: (context, state) => const LoginScreen(showSignUpInitially: true),
+        builder: (context, state) =>
+            const LoginScreen(showSignUpInitially: true),
       ),
       GoRoute(
         path: RoutePaths.dashboard,
         builder: (context, state) => const DashboardScreen(),
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('Route error: ${state.error}'),
-      ),
-    ),
+    errorBuilder: (context, state) =>
+        Scaffold(body: Center(child: Text('Route error: ${state.error}'))),
   );
 });

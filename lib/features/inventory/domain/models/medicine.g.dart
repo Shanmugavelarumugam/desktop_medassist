@@ -88,6 +88,9 @@ _Medicine _$MedicineFromJson(Map<String, dynamic> json) => _Medicine(
   barcode: json['barcode'] as String?,
   supplier: json['supplier'] as String?,
   notes: json['notes'] as String?,
+  inventoryBatches: (json['inventoryBatches'] as List<dynamic>?)
+      ?.map((e) => MedicineBatch.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$MedicineToJson(_Medicine instance) => <String, dynamic>{
@@ -118,4 +121,5 @@ Map<String, dynamic> _$MedicineToJson(_Medicine instance) => <String, dynamic>{
   'barcode': instance.barcode,
   'supplier': instance.supplier,
   'notes': instance.notes,
+  'inventoryBatches': instance.inventoryBatches,
 };

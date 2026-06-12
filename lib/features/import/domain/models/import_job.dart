@@ -20,5 +20,6 @@ abstract class ImportJob with _$ImportJob {
     required String updatedAt,
   }) = _ImportJob;
 
-  factory ImportJob.fromJson(Map<String, dynamic> json) => _$ImportJobFromJson(json);
+  factory ImportJob.fromJson(Map<String, dynamic> json) =>
+      _$ImportJobFromJson(json);
 }

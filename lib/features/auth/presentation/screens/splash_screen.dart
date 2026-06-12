@@ -12,11 +12,12 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends ConsumerState<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  
+
   final List<String> _loadingMessages = [
     'Initializing pharmacy system...',
     'Connecting pharmacy database...',
@@ -35,11 +36,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.65, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.65, curve: Curves.easeOut),
+      ),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.75, curve: Curves.easeOutBack)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.75, curve: Curves.easeOutBack),
+      ),
     );
 
     _controller.forward();
@@ -63,7 +70,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     // Navigate to correct Screen after a delay based on authentication
     Future.delayed(const Duration(milliseconds: 3200), () {
       if (mounted) {
-        final isAuthenticated = ref.read(authControllerProvider).isAuthenticated;
+        final isAuthenticated = ref
+            .read(authControllerProvider)
+            .isAuthenticated;
         if (isAuthenticated) {
           context.go(RoutePaths.dashboard);
         } else {
@@ -114,13 +123,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                         children: [
                           // Modern Logo Frame
                           Container(
-                            padding: const EdgeInsets.all(12), // Even smaller padding
+                            padding: const EdgeInsets.all(
+                              12,
+                            ), // Even smaller padding
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                              color: isDark
+                                  ? const Color(0xFF1E293B)
+                                  : Colors.white,
                               boxShadow: [
                                 BoxShadow(
-                                  color: primaryTeal.withValues(alpha: isDark ? 0.1 : 0.05), // Softer shadow
+                                  color: primaryTeal.withValues(
+                                    alpha: isDark ? 0.1 : 0.05,
+                                  ), // Softer shadow
                                   blurRadius: 20,
                                   spreadRadius: 2,
                                 ),
@@ -154,20 +169,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               letterSpacing: 2.0,
-                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1E293B),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Pharmacy Billing & Inventory System',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF64748B),
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(height: 60),
-                          
+
                           // Dynamic Loading Messages
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
@@ -175,13 +194,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                               _loadingMessages[_currentMessageIndex],
                               key: ValueKey<int>(_currentMessageIndex),
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                color: isDark
+                                    ? Colors.white60
+                                    : const Color(0xFF64748B),
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
                           ),
                           const SizedBox(height: 12),
-                          
+
                           // Sleek Linear Progress
                           SizedBox(
                             width: 260,
@@ -189,7 +210,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                               borderRadius: BorderRadius.circular(10),
                               child: const LinearProgressIndicator(
                                 backgroundColor: Color(0xFFE2E8F0),
-                                valueColor: AlwaysStoppedAnimation<Color>(primaryTeal),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  primaryTeal,
+                                ),
                                 minHeight: 4,
                               ),
                             ),

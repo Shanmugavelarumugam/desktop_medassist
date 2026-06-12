@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../domain/models/medicine.dart';
+import '../../domain/models/inventory_summary.dart';
 
 part 'inventory_state.freezed.dart';
 
@@ -14,5 +15,6 @@ abstract class InventoryState with _$InventoryState {
     @Default('') String search,
     @Default('All Categories') String selectedCategory,
     @Default('All Status') String selectedStatus,
+    @Default(InventorySummary()) InventorySummary summary,
   }) = _InventoryState;
 }

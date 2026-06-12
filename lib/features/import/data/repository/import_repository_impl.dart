@@ -59,7 +59,6 @@ class ImportRepositoryImpl implements ImportRepository {
   Future<Map<String, dynamic>> getImportStatus(String jobId) {
     return _remoteDataSource.getImportStatus(jobId);
   }
-
 }
 
 // Global Injectable ImportRepository Provider

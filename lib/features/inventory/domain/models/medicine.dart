@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../../billing_pos/domain/models/invoice.dart';
 
 part 'medicine.freezed.dart';
 part 'medicine.g.dart';
@@ -68,6 +69,7 @@ abstract class Medicine with _$Medicine {
     String? barcode,
     String? supplier,
     String? notes,
+    List<MedicineBatch>? inventoryBatches,
   }) = _Medicine;
 
   factory Medicine.fromJson(Map<String, dynamic> json) =>

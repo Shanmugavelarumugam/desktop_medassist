@@ -7,6 +7,12 @@ import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../state/auth_state.dart';
+import '../../../inventory/presentation/notifier/inventory_notifier.dart';
+import '../../../billing_pos/presentation/notifier/billing_notifier.dart';
+import '../../../barcode/presentation/notifier/barcode_notifier.dart';
+import '../../../expiry_batch/presentation/notifier/expiry_batch_notifier.dart';
+import '../../../import/presentation/notifier/import_notifier.dart';
+import '../../../purchase/presentation/notifier/purchase_notifier.dart';
 
 class AuthController extends Notifier<AuthState> {
   late final LoginUseCase _loginUseCase;
@@ -59,7 +65,10 @@ class AuthController extends Notifier<AuthState> {
   Future<bool> login({required String email, required String password}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final user = await _loginUseCase.execute(email: email, password: password);
+      final user = await _loginUseCase.execute(
+        email: email,
+        password: password,
+      );
       final token = await _repository.getSessionToken();
 
       state = AuthState(
@@ -132,6 +141,12 @@ class AuthController extends Notifier<AuthState> {
     } catch (_) {
       // Local session is cleared even if network fails
     } finally {
+      ref.invalidate(inventoryNotifierProvider);
+      ref.invalidate(billingNotifierProvider);
+      ref.invalidate(barcodeNotifierProvider);
+      ref.invalidate(expiryBatchNotifierProvider);
+      ref.invalidate(importNotifierProvider);
+      ref.invalidate(purchaseNotifierProvider);
       state = const AuthState(isAuthenticated: false);
     }
   }
@@ -151,10 +166,16 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<String?> verifyResetOtp({required String email, required String otp}) async {
+  Future<String?> verifyResetOtp({
+    required String email,
+    required String otp,
+  }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final resetToken = await _repository.verifyResetOtp(email: email, otp: otp);
+      final resetToken = await _repository.verifyResetOtp(
+        email: email,
+        otp: otp,
+      );
       state = state.copyWith(isLoading: false);
       return resetToken;
     } catch (e) {
@@ -166,11 +187,40 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<bool> resetPassword({required String resetToken, required String newPassword}) async {
+  Future<bool> resetPassword({
+    required String resetToken,
+    required String newPassword,
+  }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      await _repository.resetPassword(resetToken: resetToken, newPassword: newPassword);
+      await _repository.resetPassword(
+        resetToken: resetToken,
+        newPassword: newPassword,
+      );
       state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> updateProfile({
+    required String fullName,
+    required String email,
+  }) async {
+    if (state.user == null) return false;
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final updatedUser = state.user!.copyWith(
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
+      );
+      await _repository.saveSessionUser(updatedUser);
+      state = state.copyWith(user: updatedUser, isLoading: false);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -183,4 +233,6 @@ class AuthController extends Notifier<AuthState> {
 }
 
 // Global Injectable AuthController Provider
-final authControllerProvider = NotifierProvider<AuthController, AuthState>(AuthController.new);
+final authControllerProvider = NotifierProvider<AuthController, AuthState>(
+  AuthController.new,
+);

@@ -7,7 +7,7 @@ import '../../../inventory/domain/models/medicine.dart';
 import '../notifier/billing_notifier.dart';
 import '../../domain/models/invoice.dart';
 import '../../data/repository/billing_repository_impl.dart';
-import '../../utils/invoice_printer.dart';
+import 'invoice_preview_dialog.dart';
 
 class InvoiceBuilderRow {
   Medicine? medicine;
@@ -29,7 +29,8 @@ class InvoiceBuilderDialog extends ConsumerStatefulWidget {
   const InvoiceBuilderDialog({super.key, this.initialTemplate = 'classic'});
 
   @override
-  ConsumerState<InvoiceBuilderDialog> createState() => _InvoiceBuilderDialogState();
+  ConsumerState<InvoiceBuilderDialog> createState() =>
+      _InvoiceBuilderDialogState();
 }
 
 class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
@@ -72,6 +73,9 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
     super.initState();
     _selectedTemplate = widget.initialTemplate;
     _dueDate = DateTime.now().add(const Duration(days: 30));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(inventoryNotifierProvider.notifier).loadInventory();
+    });
   }
 
   @override
@@ -134,12 +138,18 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
     return sum;
   }
 
-  Future<void> _submitInvoice({bool printDirectly = false, bool isDraft = false}) async {
+  Future<void> _submitInvoice({
+    bool printDirectly = false,
+    bool isDraft = false,
+  }) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final validRows = _rows.where((r) => r.medicine != null && r.selectedBatch != null).toList();
+    final validRows = _rows
+        .where((r) => r.medicine != null && r.selectedBatch != null)
+        .toList();
+
     if (validRows.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -197,46 +207,48 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
         'originalNotes': _notesController.text.trim(),
       };
 
-      final paymentMethod = _paymentTerms.toUpperCase() == 'DUE' ? 'CASH' : _paymentTerms.toUpperCase();
+      final paymentMethod = _paymentTerms.toUpperCase() == 'DUE'
+          ? 'CASH'
+          : _paymentTerms.toUpperCase();
 
       final paymentsPayload = [
-        {
-          'paymentMode': paymentMethod,
-          'amount': total,
-        }
+        {'paymentMode': paymentMethod, 'amount': total},
       ];
 
       final repository = ref.read(billingRepositoryProvider);
       final invoice = await repository.createInvoice(
         items: itemsPayload,
-        patientName: _customerNameController.text.trim().isEmpty ? 'Walk-in Customer' : _customerNameController.text.trim(),
-        patientPhone: _phoneController.text.trim().isEmpty ? '9876543210' : _phoneController.text.trim(),
+        patientName: _customerNameController.text.trim().isEmpty
+            ? 'Walk-in Customer'
+            : _customerNameController.text.trim(),
+        patientPhone: _phoneController.text.trim().isEmpty
+            ? '9876543210'
+            : _phoneController.text.trim(),
         discountAmount: discount,
         paymentMode: paymentMethod,
         payments: paymentsPayload,
         notes: jsonEncode(metadata),
       );
 
-      ref.read(inventoryNotifierProvider.notifier).loadInventory();
+      ref
+          .read(inventoryNotifierProvider.notifier)
+          .loadInventory(forceRefresh: true);
       ref.read(billingNotifierProvider.notifier).loadInvoices();
       ref.read(billingNotifierProvider.notifier).loadAnalytics();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invoice generated successfully!'),
-          backgroundColor: Color(0xFF0D9488),
-        ),
-      );
 
-      if (printDirectly) {
-        await InvoicePrinter.printInvoice(invoice);
-        if (!mounted) return;
-      }
+      // ── Show Invoice Preview (do NOT auto-close the parent dialog) ──
+      // The user reviews, prints, or downloads before closing.
+      await InvoicePreviewDialog.show(context, invoice);
 
-      Navigator.of(context).pop();
-    } catch (e) {
+      // After the user closes the preview, close the builder dialog too.
+      if (mounted) Navigator.of(context).pop();
+    } catch (e, stackTrace) {
+      debugPrint('Invoice creation error: $e\n$stackTrace');
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error generating invoice: $e'),
@@ -284,7 +296,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                 child: Row(
                   children: [
                     // Breadcrumbs
-                    const Icon(Icons.receipt_long_rounded, color: primaryTeal, size: 24),
+                    const Icon(
+                      Icons.receipt_long_rounded,
+                      color: primaryTeal,
+                      size: 24,
+                    ),
                     const SizedBox(width: 12),
                     const Text(
                       'Sales',
@@ -295,7 +311,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right, color: Color(0xFF94A3B8), size: 18),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Color(0xFF94A3B8),
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     const Text(
                       'New Professional Bill',
@@ -316,16 +336,30 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                         });
                       },
                       icon: Icon(
-                        _showPreview ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                        _showPreview
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
                         size: 16,
                       ),
-                      label: Text(_showPreview ? 'Hide Live Preview' : 'Live Preview'),
+                      label: Text(
+                        _showPreview ? 'Hide Live Preview' : 'Live Preview',
+                      ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _showPreview ? Colors.white : primaryTeal,
-                        foregroundColor: _showPreview ? primaryTeal : Colors.white,
+                        backgroundColor: _showPreview
+                            ? Colors.white
+                            : primaryTeal,
+                        foregroundColor: _showPreview
+                            ? primaryTeal
+                            : Colors.white,
                         elevation: 0,
-                        side: BorderSide(color: primaryTeal, width: _showPreview ? 1.5 : 0),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        side: BorderSide(
+                          color: primaryTeal,
+                          width: _showPreview ? 1.5 : 0,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -372,10 +406,18 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                       Container(
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: primaryTeal.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(6),
+                                          color: primaryTeal.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
-                                        child: const Icon(Icons.person_outline, color: primaryTeal, size: 16),
+                                        child: const Icon(
+                                          Icons.person_outline,
+                                          color: primaryTeal,
+                                          size: 16,
+                                        ),
                                       ),
                                       const SizedBox(width: 10),
                                       const Text(
@@ -391,7 +433,8 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                   ),
                                   const SizedBox(height: 20),
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         flex: 3,
@@ -402,19 +445,26 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                                 Expanded(
                                                   child: _buildTextField(
                                                     label: 'Customer Name',
-                                                    controller: _customerNameController,
+                                                    controller:
+                                                        _customerNameController,
                                                     hint: 'Patient full name',
                                                     icon: Icons.person_rounded,
-                                                    validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
+                                                    validator: (val) =>
+                                                        val == null ||
+                                                            val.trim().isEmpty
+                                                        ? 'Required'
+                                                        : null,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 16),
                                                 Expanded(
                                                   child: _buildTextField(
                                                     label: 'Phone Number',
-                                                    controller: _phoneController,
+                                                    controller:
+                                                        _phoneController,
                                                     hint: 'Mobile number',
-                                                    icon: Icons.phone_android_rounded,
+                                                    icon: Icons
+                                                        .phone_android_rounded,
                                                   ),
                                                 ),
                                               ],
@@ -426,9 +476,12 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                                   flex: 2,
                                                   child: _buildTextField(
                                                     label: 'Address',
-                                                    controller: _addressController,
-                                                    hint: 'Patient full home address',
-                                                    icon: Icons.location_on_outlined,
+                                                    controller:
+                                                        _addressController,
+                                                    hint:
+                                                        'Patient full home address',
+                                                    icon: Icons
+                                                        .location_on_outlined,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 16),
@@ -436,9 +489,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                                   flex: 1,
                                                   child: _buildTextField(
                                                     label: 'GST Number',
-                                                    controller: _gstNumberController,
+                                                    controller:
+                                                        _gstNumberController,
                                                     hint: 'GSTIN',
-                                                    icon: Icons.description_outlined,
+                                                    icon: Icons
+                                                        .description_outlined,
                                                   ),
                                                 ),
                                               ],
@@ -456,18 +511,22 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                                 Expanded(
                                                   child: _buildTextField(
                                                     label: 'Doctor Name',
-                                                    controller: _doctorNameController,
+                                                    controller:
+                                                        _doctorNameController,
                                                     hint: 'Prescribing doctor',
-                                                    icon: Icons.medical_services_outlined,
+                                                    icon: Icons
+                                                        .medical_services_outlined,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 16),
                                                 Expanded(
                                                   child: _buildTextField(
                                                     label: 'Prescription No',
-                                                    controller: _prescriptionNoController,
+                                                    controller:
+                                                        _prescriptionNoController,
                                                     hint: 'Rx number',
-                                                    icon: Icons.edit_note_rounded,
+                                                    icon:
+                                                        Icons.edit_note_rounded,
                                                   ),
                                                 ),
                                               ],
@@ -479,7 +538,12 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                                   child: _buildDropdownField(
                                                     label: 'Payment Terms',
                                                     value: _paymentTerms,
-                                                    items: const ['Cash', 'UPI', 'Card', 'Due'],
+                                                    items: const [
+                                                      'Cash',
+                                                      'UPI',
+                                                      'Card',
+                                                      'Due',
+                                                    ],
                                                     icon: Icons.payment_rounded,
                                                     onChanged: (val) {
                                                       if (val != null) {
@@ -496,12 +560,25 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                                     label: 'Due Date',
                                                     selectedDate: _dueDate,
                                                     onTap: () async {
-                                                      final chosen = await showDatePicker(
-                                                        context: context,
-                                                        initialDate: _dueDate ?? DateTime.now().add(const Duration(days: 30)),
-                                                        firstDate: DateTime.now(),
-                                                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                                                      );
+                                                      final chosen =
+                                                          await showDatePicker(
+                                                            context: context,
+                                                            initialDate:
+                                                                _dueDate ??
+                                                                DateTime.now().add(
+                                                                  const Duration(
+                                                                    days: 30,
+                                                                  ),
+                                                                ),
+                                                            firstDate:
+                                                                DateTime.now(),
+                                                            lastDate:
+                                                                DateTime.now().add(
+                                                                  const Duration(
+                                                                    days: 365,
+                                                                  ),
+                                                                ),
+                                                          );
                                                       if (chosen != null) {
                                                         setState(() {
                                                           _dueDate = chosen;
@@ -535,17 +612,25 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Row(
                                         children: [
                                           Container(
                                             padding: const EdgeInsets.all(6),
                                             decoration: BoxDecoration(
-                                              color: primaryTeal.withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(6),
+                                              color: primaryTeal.withValues(
+                                                alpha: 0.1,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                             ),
-                                            child: const Icon(Icons.medication_liquid_rounded, color: primaryTeal, size: 16),
+                                            child: const Icon(
+                                              Icons.medication_liquid_rounded,
+                                              color: primaryTeal,
+                                              size: 16,
+                                            ),
                                           ),
                                           const SizedBox(width: 10),
                                           const Text(
@@ -565,15 +650,23 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                             _rows.add(InvoiceBuilderRow());
                                           });
                                         },
-                                        icon: const Icon(Icons.add_rounded, size: 16),
+                                        icon: const Icon(
+                                          Icons.add_rounded,
+                                          size: 16,
+                                        ),
                                         label: const Text('Add Row'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: primaryTeal,
                                           foregroundColor: Colors.white,
                                           elevation: 0,
-                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 12,
+                                          ),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -584,27 +677,113 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                   // Styled Header Row
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: primaryTeal.withValues(alpha: 0.06),
+                                      color: primaryTeal.withValues(
+                                        alpha: 0.06,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: primaryTeal.withValues(alpha: 0.15)),
+                                      border: Border.all(
+                                        color: primaryTeal.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                      ),
                                     ),
-                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                      horizontal: 12,
+                                    ),
                                     child: const Row(
                                       children: [
-                                        Expanded(flex: 4, child: Text('Medicine Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryTeal))),
+                                        Expanded(
+                                          flex: 4,
+                                          child: Text(
+                                            'Medicine Name',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: primaryTeal,
+                                            ),
+                                          ),
+                                        ),
                                         SizedBox(width: 12),
-                                        Expanded(flex: 3, child: Text('Batch Number', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryTeal))),
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(
+                                            'Batch Number',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: primaryTeal,
+                                            ),
+                                          ),
+                                        ),
                                         SizedBox(width: 12),
-                                        Expanded(flex: 1, child: Text('Qty', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryTeal), textAlign: TextAlign.center)),
+                                        Expanded(
+                                          flex: 1,
+                                          child: Text(
+                                            'Qty',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: primaryTeal,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
                                         SizedBox(width: 12),
-                                        Expanded(flex: 2, child: Text('MRP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryTeal), textAlign: TextAlign.right)),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            'MRP',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: primaryTeal,
+                                            ),
+                                            textAlign: TextAlign.right,
+                                          ),
+                                        ),
                                         SizedBox(width: 12),
-                                        Expanded(flex: 1, child: Text('Disc', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryTeal), textAlign: TextAlign.right)),
+                                        Expanded(
+                                          flex: 1,
+                                          child: Text(
+                                            'Disc',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: primaryTeal,
+                                            ),
+                                            textAlign: TextAlign.right,
+                                          ),
+                                        ),
                                         SizedBox(width: 12),
-                                        Expanded(flex: 1, child: Text('GST', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryTeal), textAlign: TextAlign.right)),
+                                        Expanded(
+                                          flex: 1,
+                                          child: Text(
+                                            'GST',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: primaryTeal,
+                                            ),
+                                            textAlign: TextAlign.right,
+                                          ),
+                                        ),
                                         SizedBox(width: 12),
-                                        Expanded(flex: 2, child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryTeal), textAlign: TextAlign.right)),
-                                        SizedBox(width: 48), // Action column spacer
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            'Amount',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: primaryTeal,
+                                            ),
+                                            textAlign: TextAlign.right,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 48,
+                                        ), // Action column spacer
                                       ],
                                     ),
                                   ),
@@ -612,12 +791,21 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
 
                                   ListView.separated(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: _rows.length,
-                                    separatorBuilder: (context, index) => const Divider(height: 1, color: borderGrey),
+                                    separatorBuilder: (context, index) =>
+                                        const Divider(
+                                          height: 1,
+                                          color: borderGrey,
+                                        ),
                                     itemBuilder: (context, index) {
                                       final row = _rows[index];
-                                      return _buildInvoiceRow(row, index, medicines);
+                                      return _buildInvoiceRow(
+                                        row,
+                                        index,
+                                        medicines,
+                                      );
                                     },
                                   ),
                                 ],
@@ -638,28 +826,63 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                   runSpacing: 12,
                                   children: [
                                     OutlinedButton.icon(
-                                      onPressed: _isSaving ? null : () => _submitInvoice(isDraft: true),
-                                      icon: const Icon(Icons.archive_outlined, size: 18),
-                                      label: const Text('Save Draft', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      onPressed: _isSaving
+                                          ? null
+                                          : () => _submitInvoice(isDraft: true),
+                                      icon: const Icon(
+                                        Icons.archive_outlined,
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'Save Draft',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: textSlate,
-                                        side: const BorderSide(color: borderGrey, width: 1.5),
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                        side: const BorderSide(
+                                          color: borderGrey,
+                                          width: 1.5,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 16,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                       ),
                                     ),
                                     ElevatedButton.icon(
-                                      onPressed: _isSaving ? null : () => _submitInvoice(printDirectly: false),
-                                      icon: const Icon(Icons.save_rounded, size: 18),
-                                      label: const Text('Generate Invoice', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      onPressed: _isSaving
+                                          ? null
+                                          : () => _submitInvoice(
+                                              printDirectly: false,
+                                            ),
+                                      icon: const Icon(
+                                        Icons.save_rounded,
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'Generate Invoice',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: primaryTeal,
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 16,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -678,13 +901,31 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                                   ),
                                   child: Column(
                                     children: [
-                                      _buildSummaryLine('Subtotal', '₹${subtotal.toStringAsFixed(2)}'),
+                                      _buildSummaryLine(
+                                        'Subtotal',
+                                        '₹${subtotal.toStringAsFixed(2)}',
+                                      ),
                                       const SizedBox(height: 6),
-                                      _buildSummaryLine('Discount', '-₹${discount.toStringAsFixed(2)}', color: Colors.green),
+                                      _buildSummaryLine(
+                                        'Discount',
+                                        '-₹${discount.toStringAsFixed(2)}',
+                                        color: Colors.green,
+                                      ),
                                       const SizedBox(height: 6),
-                                      _buildSummaryLine('GST Taxes', '₹${gst.toStringAsFixed(2)}'),
-                                      const Divider(height: 16, color: borderGrey),
-                                      _buildSummaryLine('Total Amount', '₹${total.toStringAsFixed(2)}', isBold: true, color: primaryTeal),
+                                      _buildSummaryLine(
+                                        'GST Taxes',
+                                        '₹${gst.toStringAsFixed(2)}',
+                                      ),
+                                      const Divider(
+                                        height: 16,
+                                        color: borderGrey,
+                                      ),
+                                      _buildSummaryLine(
+                                        'Total Amount',
+                                        '₹${total.toStringAsFixed(2)}',
+                                        isBold: true,
+                                        color: primaryTeal,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -708,11 +949,17 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                             child: Card(
                               elevation: 6,
                               shadowColor: Colors.black26,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               color: Colors.white,
                               child: Container(
-                                width: _selectedTemplate == 'thermal' ? 380 : 595, // Simulate A4 width or Thermal POS width
-                                padding: EdgeInsets.all(_selectedTemplate == 'thermal' ? 20 : 32),
+                                width: _selectedTemplate == 'thermal'
+                                    ? 380
+                                    : 595, // Simulate A4 width or Thermal POS width
+                                padding: EdgeInsets.all(
+                                  _selectedTemplate == 'thermal' ? 20 : 32,
+                                ),
                                 child: _buildLivePreviewContent(),
                               ),
                             ),
@@ -754,7 +1001,12 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
               children: [
                 const Text(
                   'VIYAN MEDASSIST',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: primaryTeal, letterSpacing: -0.5),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: primaryTeal,
+                    letterSpacing: -0.5,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -775,7 +1027,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
               ),
               child: const Text(
                 'TAX INVOICE',
-                style: TextStyle(fontWeight: FontWeight.bold, color: primaryTeal, fontSize: 12),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primaryTeal,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -790,18 +1046,39 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('BILLED TO:', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const Text(
+                    'BILLED TO:',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    _customerNameController.text.isEmpty ? 'Walk-in Customer' : _customerNameController.text,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                    _customerNameController.text.isEmpty
+                        ? 'Walk-in Customer'
+                        : _customerNameController.text,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
                   ),
                   if (_phoneController.text.isNotEmpty)
-                    Text('Ph: ${_phoneController.text}', style: const TextStyle(fontSize: 9)),
+                    Text(
+                      'Ph: ${_phoneController.text}',
+                      style: const TextStyle(fontSize: 9),
+                    ),
                   if (_gstNumberController.text.isNotEmpty)
-                    Text('GSTIN: ${_gstNumberController.text}', style: const TextStyle(fontSize: 9)),
+                    Text(
+                      'GSTIN: ${_gstNumberController.text}',
+                      style: const TextStyle(fontSize: 9),
+                    ),
                   if (_addressController.text.isNotEmpty)
-                    Text('Address: ${_addressController.text}', style: const TextStyle(fontSize: 9)),
+                    Text(
+                      'Address: ${_addressController.text}',
+                      style: const TextStyle(fontSize: 9),
+                    ),
                 ],
               ),
             ),
@@ -811,36 +1088,83 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                 children: [
                   Row(
                     children: [
-                      const Text('Invoice No: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
-                      Text('INV-${DateFormat('yyyyMMdd').format(DateTime.now())}-XXXX', style: const TextStyle(fontSize: 9)),
+                      const Text(
+                        'Invoice No: ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 9,
+                        ),
+                      ),
+                      Text(
+                        'INV-${DateFormat('yyyyMMdd').format(DateTime.now())}-XXXX',
+                        style: const TextStyle(fontSize: 9),
+                      ),
                     ],
                   ),
                   Row(
                     children: [
-                      const Text('Invoice Date: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
-                      Text(DateFormat('dd-MMM-yyyy').format(DateTime.now()), style: const TextStyle(fontSize: 9)),
+                      const Text(
+                        'Invoice Date: ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 9,
+                        ),
+                      ),
+                      Text(
+                        DateFormat('dd-MMM-yyyy').format(DateTime.now()),
+                        style: const TextStyle(fontSize: 9),
+                      ),
                     ],
                   ),
                   if (_dueDate != null)
                     Row(
                       children: [
-                        const Text('Due Date: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
-                        Text(DateFormat('dd-MMM-yyyy').format(_dueDate!), style: const TextStyle(fontSize: 9)),
+                        const Text(
+                          'Due Date: ',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 9,
+                          ),
+                        ),
+                        Text(
+                          DateFormat('dd-MMM-yyyy').format(_dueDate!),
+                          style: const TextStyle(fontSize: 9),
+                        ),
                       ],
                     ),
                   Row(
                     children: [
-                      const Text('Payment Terms: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
+                      const Text(
+                        'Payment Terms: ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 9,
+                        ),
+                      ),
                       Text(_paymentTerms, style: const TextStyle(fontSize: 9)),
                     ],
                   ),
-                  if (_doctorNameController.text.isNotEmpty || _prescriptionNoController.text.isNotEmpty) ...[
+                  if (_doctorNameController.text.isNotEmpty ||
+                      _prescriptionNoController.text.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    const Text('PRESCRIPTION:', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const Text(
+                      'PRESCRIPTION:',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
                     if (_doctorNameController.text.isNotEmpty)
-                      Text('Doctor: ${_doctorNameController.text}', style: const TextStyle(fontSize: 9)),
+                      Text(
+                        'Doctor: ${_doctorNameController.text}',
+                        style: const TextStyle(fontSize: 9),
+                      ),
                     if (_prescriptionNoController.text.isNotEmpty)
-                      Text('Rx No: ${_prescriptionNoController.text}', style: const TextStyle(fontSize: 9)),
+                      Text(
+                        'Rx No: ${_prescriptionNoController.text}',
+                        style: const TextStyle(fontSize: 9),
+                      ),
                   ],
                 ],
               ),
@@ -866,29 +1190,185 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             TableRow(
               decoration: BoxDecoration(
                 color: primaryTeal.withValues(alpha: 0.05),
-                border: Border(bottom: BorderSide(color: primaryTeal.withValues(alpha: 0.2), width: 1.5)),
+                border: Border(
+                  bottom: BorderSide(
+                    color: primaryTeal.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
+                ),
               ),
               children: const [
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('Medicine', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: primaryTeal))),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('Batch', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: primaryTeal))),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('Qty', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: primaryTeal), textAlign: TextAlign.center)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('MRP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: primaryTeal), textAlign: TextAlign.right)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('Disc', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: primaryTeal), textAlign: TextAlign.right)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('GST', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: primaryTeal), textAlign: TextAlign.right)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: primaryTeal), textAlign: TextAlign.right)),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Text(
+                    'Medicine',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: primaryTeal,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Text(
+                    'Batch',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: primaryTeal,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Text(
+                    'Qty',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: primaryTeal,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Text(
+                    'MRP',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: primaryTeal,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Text(
+                    'Disc',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: primaryTeal,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Text(
+                    'GST',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: primaryTeal,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Text(
+                    'Amount',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: primaryTeal,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
               ],
             ),
             ..._rows.where((r) => r.medicine != null).map((row) {
               return TableRow(
-                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[100]!))),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.grey[100]!)),
+                ),
                 children: [
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text(row.medicine?.name ?? '', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold))),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text(row.selectedBatch?.batchNumber ?? '-', style: const TextStyle(fontSize: 8))),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text(row.qty.toString(), style: const TextStyle(fontSize: 8), textAlign: TextAlign.center)),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('₹${row.mrp.toStringAsFixed(2)}', style: const TextStyle(fontSize: 8), textAlign: TextAlign.right)),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('₹${row.discount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 8), textAlign: TextAlign.right)),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('${row.gstPercentage.toStringAsFixed(0)}%', style: const TextStyle(fontSize: 8), textAlign: TextAlign.right)),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('₹${row.totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.right)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      row.medicine?.name ?? '',
+                      style: const TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      row.selectedBatch?.batchNumber ?? '-',
+                      style: const TextStyle(fontSize: 8),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      row.qty.toString(),
+                      style: const TextStyle(fontSize: 8),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      '₹${row.mrp.toStringAsFixed(2)}',
+                      style: const TextStyle(fontSize: 8),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      '₹${row.discount.toStringAsFixed(2)}',
+                      style: const TextStyle(fontSize: 8),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      '${row.gstPercentage.toStringAsFixed(0)}%',
+                      style: const TextStyle(fontSize: 8),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      '₹${row.totalAmount.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
                 ],
               );
             }),
@@ -904,12 +1384,26 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
               width: 200,
               child: Column(
                 children: [
-                  _buildPreviewSummaryLine('Subtotal', '₹${subtotal.toStringAsFixed(2)}'),
+                  _buildPreviewSummaryLine(
+                    'Subtotal',
+                    '₹${subtotal.toStringAsFixed(2)}',
+                  ),
                   if (discount > 0)
-                    _buildPreviewSummaryLine('Discount', '-₹${discount.toStringAsFixed(2)}', isGreen: true),
-                  _buildPreviewSummaryLine('GST Taxes', '₹${gst.toStringAsFixed(2)}'),
+                    _buildPreviewSummaryLine(
+                      'Discount',
+                      '-₹${discount.toStringAsFixed(2)}',
+                      isGreen: true,
+                    ),
+                  _buildPreviewSummaryLine(
+                    'GST Taxes',
+                    '₹${gst.toStringAsFixed(2)}',
+                  ),
                   const Divider(height: 12),
-                  _buildPreviewSummaryLine('TOTAL', '₹${total.toStringAsFixed(2)}', isBold: true),
+                  _buildPreviewSummaryLine(
+                    'TOTAL',
+                    '₹${total.toStringAsFixed(2)}',
+                    isBold: true,
+                  ),
                 ],
               ),
             ),
@@ -920,7 +1414,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
         const Center(
           child: Text(
             'Thank you for visiting! Get well soon.',
-            style: TextStyle(fontSize: 9, fontStyle: FontStyle.italic, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 9,
+              fontStyle: FontStyle.italic,
+              color: Colors.grey,
+            ),
           ),
         ),
       ],
@@ -946,7 +1444,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                 children: [
                   const Text(
                     'VIYAN MEDASSIST',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   const Text(
@@ -960,14 +1462,21 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: primaryTeal,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
                   'TAX INVOICE',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 11),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ],
@@ -990,19 +1499,41 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('BILLED TO', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: primaryTeal)),
+                    const Text(
+                      'BILLED TO',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: primaryTeal,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Text(
-                      _customerNameController.text.isEmpty ? 'Walk-in Customer' : _customerNameController.text,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: textDark),
+                      _customerNameController.text.isEmpty
+                          ? 'Walk-in Customer'
+                          : _customerNameController.text,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                        color: textDark,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     if (_phoneController.text.isNotEmpty)
-                      Text('Ph: ${_phoneController.text}', style: const TextStyle(fontSize: 9, color: textSlate)),
+                      Text(
+                        'Ph: ${_phoneController.text}',
+                        style: const TextStyle(fontSize: 9, color: textSlate),
+                      ),
                     if (_gstNumberController.text.isNotEmpty)
-                      Text('GSTIN: ${_gstNumberController.text}', style: const TextStyle(fontSize: 9, color: textSlate)),
+                      Text(
+                        'GSTIN: ${_gstNumberController.text}',
+                        style: const TextStyle(fontSize: 9, color: textSlate),
+                      ),
                     if (_addressController.text.isNotEmpty)
-                      Text('Address: ${_addressController.text}', style: const TextStyle(fontSize: 9, color: textSlate)),
+                      Text(
+                        'Address: ${_addressController.text}',
+                        style: const TextStyle(fontSize: 9, color: textSlate),
+                      ),
                   ],
                 ),
               ),
@@ -1019,43 +1550,97 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('INVOICE INFO', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: primaryTeal)),
+                    const Text(
+                      'INVOICE INFO',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: primaryTeal,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Inv Number:', style: TextStyle(fontSize: 9, color: textSlate)),
-                        Text('INV-${DateFormat('yyyyMMdd').format(DateTime.now())}-XXXX', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Inv Number:',
+                          style: TextStyle(fontSize: 9, color: textSlate),
+                        ),
+                        Text(
+                          'INV-${DateFormat('yyyyMMdd').format(DateTime.now())}-XXXX',
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Date:', style: TextStyle(fontSize: 9, color: textSlate)),
-                        Text(DateFormat('dd-MMM-yyyy').format(DateTime.now()), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Date:',
+                          style: TextStyle(fontSize: 9, color: textSlate),
+                        ),
+                        Text(
+                          DateFormat('dd-MMM-yyyy').format(DateTime.now()),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     if (_dueDate != null)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Due Date:', style: TextStyle(fontSize: 9, color: textSlate)),
-                          Text(DateFormat('dd-MMM-yyyy').format(_dueDate!), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Due Date:',
+                            style: TextStyle(fontSize: 9, color: textSlate),
+                          ),
+                          Text(
+                            DateFormat('dd-MMM-yyyy').format(_dueDate!),
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Terms:', style: TextStyle(fontSize: 9, color: textSlate)),
-                        Text(_paymentTerms, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Terms:',
+                          style: TextStyle(fontSize: 9, color: textSlate),
+                        ),
+                        Text(
+                          _paymentTerms,
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
-                    if (_doctorNameController.text.isNotEmpty || _prescriptionNoController.text.isNotEmpty) ...[
+                    if (_doctorNameController.text.isNotEmpty ||
+                        _prescriptionNoController.text.isNotEmpty) ...[
                       const Divider(height: 12),
                       if (_doctorNameController.text.isNotEmpty)
-                        Text('Dr. ${_doctorNameController.text}', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: textDark)),
+                        Text(
+                          'Dr. ${_doctorNameController.text}',
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: textDark,
+                          ),
+                        ),
                       if (_prescriptionNoController.text.isNotEmpty)
-                        Text('Rx: ${_prescriptionNoController.text}', style: const TextStyle(fontSize: 9, color: textSlate)),
+                        Text(
+                          'Rx: ${_prescriptionNoController.text}',
+                          style: const TextStyle(fontSize: 9, color: textSlate),
+                        ),
                     ],
                   ],
                 ),
@@ -1083,35 +1668,191 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                 borderRadius: BorderRadius.circular(4),
               ),
               children: const [
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), child: Text('Medicine', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.white))),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), child: Text('Batch', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.white))),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), child: Text('Qty', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.white), textAlign: TextAlign.center)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), child: Text('MRP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.white), textAlign: TextAlign.right)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), child: Text('Disc', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.white), textAlign: TextAlign.right)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), child: Text('GST', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.white), textAlign: TextAlign.right)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.white), textAlign: TextAlign.right)),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Text(
+                    'Medicine',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Text(
+                    'Batch',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Text(
+                    'Qty',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Text(
+                    'MRP',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Text(
+                    'Disc',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Text(
+                    'GST',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Text(
+                    'Amount',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
               ],
             ),
-            ..._rows.asMap().entries.where((entry) => entry.value.medicine != null).map((entry) {
-              final index = entry.key;
-              final row = entry.value;
-              final isEven = index % 2 == 0;
-              return TableRow(
-                decoration: BoxDecoration(
-                  color: isEven ? Colors.white : const Color(0xFFF8FAFC),
-                  border: const Border(bottom: BorderSide(color: borderGrey)),
-                ),
-                children: [
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text(row.medicine?.name ?? '', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold))),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text(row.selectedBatch?.batchNumber ?? '-', style: const TextStyle(fontSize: 8))),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text(row.qty.toString(), style: const TextStyle(fontSize: 8), textAlign: TextAlign.center)),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('₹${row.mrp.toStringAsFixed(2)}', style: const TextStyle(fontSize: 8), textAlign: TextAlign.right)),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('₹${row.discount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 8), textAlign: TextAlign.right)),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('${row.gstPercentage.toStringAsFixed(0)}%', style: const TextStyle(fontSize: 8), textAlign: TextAlign.right)),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Text('₹${row.totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: primaryTeal), textAlign: TextAlign.right)),
-                ],
-              );
-            }),
+            ..._rows
+                .asMap()
+                .entries
+                .where((entry) => entry.value.medicine != null)
+                .map((entry) {
+                  final index = entry.key;
+                  final row = entry.value;
+                  final isEven = index % 2 == 0;
+                  return TableRow(
+                    decoration: BoxDecoration(
+                      color: isEven ? Colors.white : const Color(0xFFF8FAFC),
+                      border: const Border(
+                        bottom: BorderSide(color: borderGrey),
+                      ),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          row.medicine?.name ?? '',
+                          style: const TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          row.selectedBatch?.batchNumber ?? '-',
+                          style: const TextStyle(fontSize: 8),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          row.qty.toString(),
+                          style: const TextStyle(fontSize: 8),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          '₹${row.mrp.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 8),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          '₹${row.discount.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 8),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          '${row.gstPercentage.toStringAsFixed(0)}%',
+                          style: const TextStyle(fontSize: 8),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          '₹${row.totalAmount.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                            color: primaryTeal,
+                          ),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  );
+                }),
           ],
         ),
         const SizedBox(height: 20),
@@ -1132,8 +1873,17 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Subtotal', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
-                      Text('₹${subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 9, color: Colors.white)),
+                      const Text(
+                        'Subtotal',
+                        style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
+                      ),
+                      Text(
+                        '₹${subtotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: Colors.white,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -1141,8 +1891,18 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Discount', style: TextStyle(fontSize: 9, color: Colors.green)),
-                        Text('-₹${discount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 9, color: Colors.green, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Discount',
+                          style: TextStyle(fontSize: 9, color: Colors.green),
+                        ),
+                        Text(
+                          '-₹${discount.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 9,
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -1150,16 +1910,39 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('GST Taxes', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
-                      Text('₹${gst.toStringAsFixed(2)}', style: const TextStyle(fontSize: 9, color: Colors.white)),
+                      const Text(
+                        'GST Taxes',
+                        style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
+                      ),
+                      Text(
+                        '₹${gst.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: Colors.white,
+                        ),
+                      ),
                     ],
                   ),
                   const Divider(height: 12, color: Color(0xFF334155)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('TOTAL DUE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
-                      Text('₹${total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2DD4BF))),
+                      const Text(
+                        'TOTAL DUE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '₹${total.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2DD4BF),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -1171,7 +1954,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
         const Center(
           child: Text(
             'Thank you for visiting! Get well soon.',
-            style: TextStyle(fontSize: 9, fontStyle: FontStyle.italic, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 9,
+              fontStyle: FontStyle.italic,
+              color: Colors.grey,
+            ),
           ),
         ),
       ],
@@ -1185,7 +1972,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
         const Center(
           child: Text(
             'VIYAN MEDASSIST',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textDark),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: textDark,
+            ),
           ),
         ),
         const Center(
@@ -1201,19 +1992,40 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
           ),
         ),
         const SizedBox(height: 8),
-        Text('-' * 45, style: const TextStyle(fontSize: 8, color: borderGrey, fontWeight: FontWeight.bold)),
+        Text(
+          '-' * 45,
+          style: const TextStyle(
+            fontSize: 8,
+            color: borderGrey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           'INV: INV-${DateFormat('yyyyMMdd').format(DateTime.now())}-XXXX\n'
           'DATE: ${DateFormat('dd-MMM-yyyy HH:mm').format(DateTime.now())}\n'
           'CUST: ${_customerNameController.text.isEmpty ? 'Walk-in Customer' : _customerNameController.text}\n'
           'TERMS: $_paymentTerms',
-          style: const TextStyle(fontSize: 8, fontFamily: 'monospace', height: 1.3),
+          style: const TextStyle(
+            fontSize: 8,
+            fontFamily: 'monospace',
+            height: 1.3,
+          ),
         ),
         if (_doctorNameController.text.isNotEmpty)
-          Text('DOC: Dr. ${_doctorNameController.text}', style: const TextStyle(fontSize: 8, fontFamily: 'monospace')),
+          Text(
+            'DOC: Dr. ${_doctorNameController.text}',
+            style: const TextStyle(fontSize: 8, fontFamily: 'monospace'),
+          ),
         const SizedBox(height: 4),
-        Text('-' * 45, style: const TextStyle(fontSize: 8, color: borderGrey, fontWeight: FontWeight.bold)),
+        Text(
+          '-' * 45,
+          style: const TextStyle(
+            fontSize: 8,
+            color: borderGrey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 4),
 
         // Table
@@ -1226,12 +2038,34 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
           },
           children: [
             TableRow(
-              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: borderGrey, style: BorderStyle.solid))),
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: borderGrey,
+                    style: BorderStyle.solid,
+                  ),
+                ),
+              ),
               children: const [
-                Text('Item', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8)),
-                Text('Qty', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8), textAlign: TextAlign.center),
-                Text('MRP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8), textAlign: TextAlign.right),
-                Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8), textAlign: TextAlign.right),
+                Text(
+                  'Item',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8),
+                ),
+                Text(
+                  'Qty',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  'MRP',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8),
+                  textAlign: TextAlign.right,
+                ),
+                Text(
+                  'Total',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8),
+                  textAlign: TextAlign.right,
+                ),
               ],
             ),
             ..._rows.where((r) => r.medicine != null).map((row) {
@@ -1239,19 +2073,47 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text('${row.medicine?.name}', style: const TextStyle(fontSize: 7, fontFamily: 'monospace')),
+                    child: Text(
+                      '${row.medicine?.name}',
+                      style: const TextStyle(
+                        fontSize: 7,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text('${row.qty}', style: const TextStyle(fontSize: 7, fontFamily: 'monospace'), textAlign: TextAlign.center),
+                    child: Text(
+                      '${row.qty}',
+                      style: const TextStyle(
+                        fontSize: 7,
+                        fontFamily: 'monospace',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text('₹${row.mrp.toStringAsFixed(1)}', style: const TextStyle(fontSize: 7, fontFamily: 'monospace'), textAlign: TextAlign.right),
+                    child: Text(
+                      '₹${row.mrp.toStringAsFixed(1)}',
+                      style: const TextStyle(
+                        fontSize: 7,
+                        fontFamily: 'monospace',
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text('₹${row.totalAmount.toStringAsFixed(1)}', style: const TextStyle(fontSize: 7, fontFamily: 'monospace', fontWeight: FontWeight.bold), textAlign: TextAlign.right),
+                    child: Text(
+                      '₹${row.totalAmount.toStringAsFixed(1)}',
+                      style: const TextStyle(
+                        fontSize: 7,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
                   ),
                 ],
               );
@@ -1259,63 +2121,127 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
           ],
         ),
         const SizedBox(height: 4),
-        Text('-' * 45, style: const TextStyle(fontSize: 8, color: borderGrey, fontWeight: FontWeight.bold)),
+        Text(
+          '-' * 45,
+          style: const TextStyle(
+            fontSize: 8,
+            color: borderGrey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 4),
 
         // Calculations
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Subtotal:', style: TextStyle(fontSize: 8, fontFamily: 'monospace')),
-            Text('₹${subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 8, fontFamily: 'monospace')),
+            const Text(
+              'Subtotal:',
+              style: TextStyle(fontSize: 8, fontFamily: 'monospace'),
+            ),
+            Text(
+              '₹${subtotal.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 8, fontFamily: 'monospace'),
+            ),
           ],
         ),
         if (discount > 0)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Discount:', style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Colors.green)),
-              Text('-₹${discount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 8, fontFamily: 'monospace', color: Colors.green)),
+              const Text(
+                'Discount:',
+                style: TextStyle(
+                  fontSize: 8,
+                  fontFamily: 'monospace',
+                  color: Colors.green,
+                ),
+              ),
+              Text(
+                '-₹${discount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 8,
+                  fontFamily: 'monospace',
+                  color: Colors.green,
+                ),
+              ),
             ],
           ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('GST Taxes:', style: TextStyle(fontSize: 8, fontFamily: 'monospace')),
-            Text('₹${gst.toStringAsFixed(2)}', style: const TextStyle(fontSize: 8, fontFamily: 'monospace')),
+            const Text(
+              'GST Taxes:',
+              style: TextStyle(fontSize: 8, fontFamily: 'monospace'),
+            ),
+            Text(
+              '₹${gst.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 8, fontFamily: 'monospace'),
+            ),
           ],
         ),
         const SizedBox(height: 2),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('TOTAL AMOUNT:', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-            Text('₹${total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+            const Text(
+              'TOTAL AMOUNT:',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
+            Text(
+              '₹${total.toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
-        Text('-' * 45, style: const TextStyle(fontSize: 8, color: borderGrey, fontWeight: FontWeight.bold)),
+        Text(
+          '-' * 45,
+          style: const TextStyle(
+            fontSize: 8,
+            color: borderGrey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 12),
 
         // Simulated Barcode
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(24, (index) => Container(
-            width: (index % 4 == 0 || index % 5 == 0) ? 3.0 : 1.5,
-            height: 26,
-            color: Colors.black,
-            margin: const EdgeInsets.symmetric(horizontal: 1),
-          )),
+          children: List.generate(
+            24,
+            (index) => Container(
+              width: (index % 4 == 0 || index % 5 == 0) ? 3.0 : 1.5,
+              height: 26,
+              color: Colors.black,
+              margin: const EdgeInsets.symmetric(horizontal: 1),
+            ),
+          ),
         ),
         const SizedBox(height: 4),
         const Center(
-          child: Text('*INV-POS-XXXX*', style: TextStyle(fontSize: 7, fontFamily: 'monospace')),
+          child: Text(
+            '*INV-POS-XXXX*',
+            style: TextStyle(fontSize: 7, fontFamily: 'monospace'),
+          ),
         ),
         const SizedBox(height: 16),
         const Center(
           child: Text(
             'Thank you for shopping!\nVisit again.',
-            style: TextStyle(fontSize: 8, fontStyle: FontStyle.italic, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 8,
+              fontStyle: FontStyle.italic,
+              color: Colors.grey,
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -1324,7 +2250,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
   }
 
   // Row helper widget builder
-  Widget _buildInvoiceRow(InvoiceBuilderRow row, int index, List<Medicine> medicines) {
+  Widget _buildInvoiceRow(
+    InvoiceBuilderRow row,
+    int index,
+    List<Medicine> medicines,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Row(
@@ -1339,49 +2269,68 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                   return const Iterable<Medicine>.empty();
                 }
                 return medicines.where((med) {
-                  return med.name.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                  return med.name.toLowerCase().contains(
+                    textEditingValue.text.toLowerCase(),
+                  );
                 });
               },
-              fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
-                return TextFormField(
-                  controller: textController,
-                  focusNode: focusNode,
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
-                  decoration: InputDecoration(
-                    hintText: 'Search medicine...',
-                    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    filled: true,
-                    fillColor: Colors.white,
-                    isDense: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: borderGrey),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: borderGrey),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: primaryTeal, width: 1.5),
-                    ),
-                  ),
-                );
-              },
+              fieldViewBuilder:
+                  (context, textController, focusNode, onFieldSubmitted) {
+                    return TextFormField(
+                      controller: textController,
+                      focusNode: focusNode,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF0F172A),
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Search medicine...',
+                        hintStyle: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: borderGrey),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: borderGrey),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: primaryTeal,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
               onSelected: (Medicine selection) async {
                 row.medicine = selection;
-                row.gstPercentage = (selection.gstPercentage ?? 12.0).toDouble();
+                row.gstPercentage = (selection.gstPercentage ?? 12.0)
+                    .toDouble();
                 row.batches = [];
                 row.selectedBatch = null;
 
                 // Load batches
-                final fetched = await ref.read(billingNotifierProvider.notifier).fetchBatches(selection.id);
+                final fetched = await ref
+                    .read(billingNotifierProvider.notifier)
+                    .fetchBatches(selection.id);
                 setState(() {
                   row.batches = fetched;
                   if (fetched.isNotEmpty) {
                     row.selectedBatch = fetched.first;
-                    row.mrp = double.tryParse(fetched.first.mrp.toString()) ?? 0.0;
+                    row.mrp =
+                        double.tryParse(fetched.first.mrp.toString()) ?? 0.0;
                   }
                 });
               },
@@ -1395,10 +2344,16 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             child: DropdownButtonFormField<MedicineBatch>(
               initialValue: row.selectedBatch,
               isExpanded: true,
-              hint: const Text('Select Batch', style: TextStyle(fontSize: 12, color: textSlate)),
+              hint: const Text(
+                'Select Batch',
+                style: TextStyle(fontSize: 12, color: textSlate),
+              ),
               style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
                 filled: true,
                 fillColor: Colors.white,
                 isDense: true,
@@ -1416,7 +2371,9 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                 ),
               ),
               items: row.batches.map((batch) {
-                final isExpired = DateTime.parse(batch.expiryDate).isBefore(DateTime.now());
+                final isExpired = DateTime.parse(
+                  batch.expiryDate,
+                ).isBefore(DateTime.now());
                 return DropdownMenuItem<MedicineBatch>(
                   value: batch,
                   enabled: !isExpired && batch.availableQuantity > 0,
@@ -1425,7 +2382,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isExpired ? Colors.red : (batch.availableQuantity == 0 ? Colors.grey : const Color(0xFF0F172A)),
+                      color: isExpired
+                          ? Colors.red
+                          : (batch.availableQuantity == 0
+                                ? Colors.grey
+                                : const Color(0xFF0F172A)),
                     ),
                   ),
                 );
@@ -1451,7 +2412,10 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 10,
+                ),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
@@ -1484,11 +2448,16 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             child: TextFormField(
               key: ValueKey('mrp_${row.selectedBatch?.id}_${row.mrp}'),
               initialValue: row.mrp.toStringAsFixed(2),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               textAlign: TextAlign.right,
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 10,
+                ),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
@@ -1522,11 +2491,16 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             flex: 1,
             child: TextFormField(
               initialValue: row.discount.toString(),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               textAlign: TextAlign.right,
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 10,
+                ),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
@@ -1559,11 +2533,16 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             child: TextFormField(
               key: ValueKey('gst_${row.medicine?.id}_${row.gstPercentage}'),
               initialValue: row.gstPercentage.toStringAsFixed(0),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               textAlign: TextAlign.right,
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 10,
+                ),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
@@ -1598,7 +2577,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             child: Text(
               '₹${row.totalAmount.toStringAsFixed(2)}',
               textAlign: TextAlign.right,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: textDark),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: textDark,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -1608,7 +2591,11 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             width: 48,
             child: Center(
               child: IconButton(
-                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.redAccent,
+                  size: 20,
+                ),
                 onPressed: () {
                   setState(() {
                     if (_rows.length > 1) {
@@ -1637,7 +2624,14 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textSlate)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: textSlate,
+          ),
+        ),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -1646,8 +2640,15 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-            prefixIcon: Icon(icon, color: primaryTeal.withValues(alpha: 0.7), size: 16),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            prefixIcon: Icon(
+              icon,
+              color: primaryTeal.withValues(alpha: 0.7),
+              size: 16,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
@@ -1680,14 +2681,28 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textSlate)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: textSlate,
+          ),
+        ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           initialValue: value,
           style: const TextStyle(fontSize: 13, color: textDark),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: primaryTeal.withValues(alpha: 0.7), size: 16),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            prefixIcon: Icon(
+              icon,
+              color: primaryTeal.withValues(alpha: 0.7),
+              size: 16,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
@@ -1704,7 +2719,9 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             ),
             isDense: true,
           ),
-          items: items.map((i) => DropdownMenuItem(value: i, child: Text(i))).toList(),
+          items: items
+              .map((i) => DropdownMenuItem(value: i, child: Text(i)))
+              .toList(),
           onChanged: onChanged,
         ),
       ],
@@ -1720,7 +2737,14 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textSlate)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: textSlate,
+          ),
+        ),
         const SizedBox(height: 6),
         InkWell(
           onTap: onTap,
@@ -1736,11 +2760,17 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.calendar_today_outlined, size: 16, color: primaryTeal.withValues(alpha: 0.7)),
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                  color: primaryTeal.withValues(alpha: 0.7),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    selectedDate == null ? 'Select Date' : DateFormat('dd-MMM-yyyy').format(selectedDate),
+                    selectedDate == null
+                        ? 'Select Date'
+                        : DateFormat('dd-MMM-yyyy').format(selectedDate),
                     style: const TextStyle(fontSize: 13, color: textDark),
                   ),
                 ),
@@ -1753,7 +2783,12 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
     );
   }
 
-  Widget _buildSummaryLine(String label, String value, {bool isBold = false, Color? color}) {
+  Widget _buildSummaryLine(
+    String label,
+    String value, {
+    bool isBold = false,
+    Color? color,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1777,7 +2812,12 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
     );
   }
 
-  Widget _buildPreviewSummaryLine(String label, String value, {bool isBold = false, bool isGreen = false}) {
+  Widget _buildPreviewSummaryLine(
+    String label,
+    String value, {
+    bool isBold = false,
+    bool isGreen = false,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1794,7 +2834,9 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
           style: TextStyle(
             fontSize: isBold ? 10 : 8,
             fontWeight: FontWeight.bold,
-            color: isGreen ? Colors.green : (isBold ? primaryTeal : Colors.black),
+            color: isGreen
+                ? Colors.green
+                : (isBold ? primaryTeal : Colors.black),
           ),
         ),
       ],

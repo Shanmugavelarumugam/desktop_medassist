@@ -6,11 +6,11 @@ class CsvHelper {
     List<String> currentRow = [];
     final StringBuffer currentCell = StringBuffer();
     bool inQuotes = false;
-    
+
     int i = 0;
     while (i < csvText.length) {
       final String char = csvText[i];
-      
+
       if (char == '"') {
         if (inQuotes && i + 1 < csvText.length && csvText[i + 1] == '"') {
           // Escaped quote: "" -> "
@@ -31,8 +31,9 @@ class CsvHelper {
         }
         currentRow.add(currentCell.toString().trim());
         currentCell.clear();
-        
-        if (currentRow.isNotEmpty && (currentRow.length > 1 || currentRow.first.isNotEmpty)) {
+
+        if (currentRow.isNotEmpty &&
+            (currentRow.length > 1 || currentRow.first.isNotEmpty)) {
           results.add(currentRow);
         }
         currentRow = [];
@@ -41,13 +42,13 @@ class CsvHelper {
       }
       i++;
     }
-    
+
     // Add residual cell/row
     if (currentCell.isNotEmpty || currentRow.isNotEmpty) {
       currentRow.add(currentCell.toString().trim());
       results.add(currentRow);
     }
-    
+
     return results;
   }
 
@@ -56,7 +57,7 @@ class CsvHelper {
     if (csvRows.isEmpty) return [];
     final List<String> headers = csvRows.first;
     final List<Map<String, String>> maps = [];
-    
+
     for (int i = 1; i < csvRows.length; i++) {
       final List<String> row = csvRows[i];
       final Map<String, String> map = {};
@@ -67,7 +68,7 @@ class CsvHelper {
       }
       maps.add(map);
     }
-    
+
     return maps;
   }
 }

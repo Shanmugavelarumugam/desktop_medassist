@@ -93,7 +93,9 @@ class AuthState {
 // Auth Notifier using modern standard Riverpod Notifier class
 class AuthNotifier extends Notifier<AuthState> {
   late final Dio _dio;
-  final _secureStorage = const FlutterSecureStorage();
+  final _secureStorage = const FlutterSecureStorage(
+    mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+  );
   static const String _baseUrl =
       'https://medassist-backend-hryu.onrender.com/api/auth';
 
@@ -138,14 +140,15 @@ class AuthNotifier extends Notifier<AuthState> {
 
   // Helper helper to format Dio errors nicely
   String _formatDioError(DioException e) {
-    if (e.type == DioExceptionType.receiveTimeout || 
+    if (e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.connectionTimeout) {
       return 'Server is starting or taking too long to respond. Please try again in a few seconds.';
     } else if (e.type == DioExceptionType.connectionError) {
       return 'No internet connection.';
     } else {
-      return e.response?.data?['error']?['message'] ?? 'Network or Server Error';
+      return e.response?.data?['error']?['message'] ??
+          'Network or Server Error';
     }
   }
 

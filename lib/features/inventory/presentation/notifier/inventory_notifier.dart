@@ -4,28 +4,42 @@ import '../../domain/repository/inventory_repository.dart';
 import '../../data/repository/inventory_repository_impl.dart';
 import '../state/inventory_state.dart';
 import '../../domain/models/medicine.dart';
+import '../../domain/models/inventory_summary.dart';
 
 class InventoryNotifier extends Notifier<InventoryState> {
-  late final InventoryRepository _repository;
+  late InventoryRepository _repository;
 
   @override
   InventoryState build() {
     _repository = ref.watch(inventoryRepositoryProvider);
-    // Load inventory immediately in microtask
-    Future.microtask(() => loadInventory());
     return const InventoryState();
   }
 
-  Future<void> loadInventory() async {
+  Future<void> loadInventory({
+    String? search,
+    int? limit,
+    bool forceRefresh = false,
+  }) async {
+    if (state.isLoading) return;
+    if (!forceRefresh && state.medicines.isNotEmpty && search == null) return;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final medicines = await _repository.getMedicines();
+      final medicines = await _repository.getMedicines(
+        search: search,
+        limit: limit,
+      );
       final categories = await _repository.getCategories();
       final manufacturers = await _repository.getManufacturers();
+
+      // Fetch summary statistics directly from backend
+      final summaryJson = await _repository.getSummary();
+      final summary = InventorySummary.fromJson(summaryJson);
+
       state = state.copyWith(
         medicines: medicines,
         categories: categories,
         manufacturers: manufacturers,
+        summary: summary,
         isLoading: false,
       );
     } catch (e) {
@@ -39,6 +53,7 @@ class InventoryNotifier extends Notifier<InventoryState> {
 
   void setSearch(String search) {
     state = state.copyWith(search: search);
+    loadInventory(search: search, limit: 1000);
   }
 
   void setCategory(String category) {
@@ -87,7 +102,7 @@ class InventoryNotifier extends Notifier<InventoryState> {
         supplier: supplier,
         notes: notes,
       );
-      await loadInventory();
+      await loadInventory(forceRefresh: true);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -128,7 +143,7 @@ class InventoryNotifier extends Notifier<InventoryState> {
         supplier: supplier,
         notes: notes,
       );
-      await loadInventory();
+      await loadInventory(forceRefresh: true);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -143,7 +158,7 @@ class InventoryNotifier extends Notifier<InventoryState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       await _repository.deleteMedicine(id: id);
-      await loadInventory();
+      await loadInventory(forceRefresh: true);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -172,7 +187,7 @@ class InventoryNotifier extends Notifier<InventoryState> {
         purchasePrice: purchasePrice,
         mrp: mrp,
       );
-      await loadInventory();
+      await loadInventory(forceRefresh: true);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -185,24 +200,31 @@ class InventoryNotifier extends Notifier<InventoryState> {
 }
 
 // Global Injectable InventoryNotifier Provider
-final inventoryNotifierProvider = NotifierProvider<InventoryNotifier, InventoryState>(InventoryNotifier.new);
+final inventoryNotifierProvider =
+    NotifierProvider<InventoryNotifier, InventoryState>(InventoryNotifier.new);
 
 // Extension to expose filtered list and computed dashboard statistics on the state
 extension InventoryStats on InventoryState {
   List<Medicine> get filteredMedicines {
     return medicines.where((med) {
       // 1. Search Filter (by name, generic, or batch)
-      final matchesSearch = search.isEmpty ||
+      final matchesSearch =
+          search.isEmpty ||
           med.name.toLowerCase().contains(search.toLowerCase()) ||
-          (med.genericName != null && med.genericName!.toLowerCase().contains(search.toLowerCase())) ||
-          (med.batchNumber != null && med.batchNumber!.toLowerCase().contains(search.toLowerCase()));
+          (med.genericName != null &&
+              med.genericName!.toLowerCase().contains(search.toLowerCase())) ||
+          (med.batchNumber != null &&
+              med.batchNumber!.toLowerCase().contains(search.toLowerCase()));
 
       // 2. Category Filter
-      final matchesCategory = selectedCategory == 'All Categories' ||
+      final matchesCategory =
+          selectedCategory == 'All Categories' ||
           (med.category != null && med.category!.name == selectedCategory);
 
       // 3. Status Filter
-      final matchesStatus = selectedStatus == 'All Status' || _checkStatusMatches(med, selectedStatus);
+      final matchesStatus =
+          selectedStatus == 'All Status' ||
+          _checkStatusMatches(med, selectedStatus);
 
       return matchesSearch && matchesCategory && matchesStatus;
     }).toList();
@@ -210,9 +232,10 @@ extension InventoryStats on InventoryState {
 
   bool _checkStatusMatches(Medicine med, String statusFilter) {
     final now = DateTime.now();
-    final bool isExpired = med.expiryDate != null && DateTime.parse(med.expiryDate!).isBefore(now);
+    final bool isExpired =
+        med.expiryDate != null && DateTime.parse(med.expiryDate!).isBefore(now);
     final int reorderLevel = med.reorderLevel ?? 10;
-    
+
     switch (statusFilter) {
       case 'Expired':
         return isExpired;
@@ -228,28 +251,42 @@ extension InventoryStats on InventoryState {
   }
 
   // Calculated Stats
-  int get totalSKU => medicines.length;
+  int get totalSKU =>
+      summary.totalSKU > 0 ? summary.totalSKU : medicines.length;
 
-  int get outOfStockCount => medicines.where((m) => m.stock == 0).length;
+  int get outOfStockCount => summary.totalSKU > 0
+      ? summary.outOfStock
+      : medicines.where((m) => m.stock == 0).length;
 
   int get lowStockCount {
+    if (summary.totalSKU > 0) return summary.lowStock;
     return medicines.where((m) {
       return m.stock > 0 && m.stock <= (m.reorderLevel ?? 10);
     }).length;
   }
 
   int get inStockCount {
+    if (summary.totalSKU > 0) return summary.inStock;
     return medicines.where((m) {
       return m.stock > (m.reorderLevel ?? 10);
     }).length;
   }
 
   int get expiredCount {
+    if (summary.totalSKU > 0) return summary.expired;
     final now = DateTime.now();
-    return medicines.where((m) => m.expiryDate != null && m.expiryDate!.isNotEmpty && DateTime.parse(m.expiryDate!).isBefore(now)).length;
+    return medicines
+        .where(
+          (m) =>
+              m.expiryDate != null &&
+              m.expiryDate!.isNotEmpty &&
+              DateTime.parse(m.expiryDate!).isBefore(now),
+        )
+        .length;
   }
 
   double get inventoryValue {
+    if (summary.totalSKU > 0) return summary.inventoryValue;
     return medicines.fold(0.0, (sum, m) => sum + (m.stock * m.purchasePrice));
   }
 }

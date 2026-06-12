@@ -5,7 +5,10 @@ import '../../../../core/network/dio_client.dart';
 import '../../../inventory/domain/models/medicine.dart';
 
 abstract class BarcodeRemoteDataSource {
-  Future<Uint8List> generateBarcode({required String text, String type = 'code128'});
+  Future<Uint8List> generateBarcode({
+    required String text,
+    String type = 'code128',
+  });
   Future<Medicine?> lookupMedicineByBarcode(String barcode);
 }
 
@@ -15,14 +18,14 @@ class BarcodeRemoteDataSourceImpl implements BarcodeRemoteDataSource {
   BarcodeRemoteDataSourceImpl(this._dio);
 
   @override
-  Future<Uint8List> generateBarcode({required String text, String type = 'code128'}) async {
+  Future<Uint8List> generateBarcode({
+    required String text,
+    String type = 'code128',
+  }) async {
     try {
       final response = await _dio.get(
         '/api/inventory/barcode/generate',
-        queryParameters: {
-          'text': text,
-          'type': type,
-        },
+        queryParameters: {'text': text, 'type': type},
         options: Options(responseType: ResponseType.bytes),
       );
       if (response.data is Uint8List) {
@@ -32,7 +35,10 @@ class BarcodeRemoteDataSourceImpl implements BarcodeRemoteDataSource {
       }
       throw Exception('Invalid response type received from barcode generation');
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error generating barcode');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error generating barcode',
+      );
     }
   }
 
@@ -40,7 +46,9 @@ class BarcodeRemoteDataSourceImpl implements BarcodeRemoteDataSource {
   Future<Medicine?> lookupMedicineByBarcode(String barcode) async {
     // Try primary endpoint first: /api/inventory/medicines/barcode/{barcode}
     try {
-      final response = await _dio.get('/api/inventory/medicines/barcode/$barcode');
+      final response = await _dio.get(
+        '/api/inventory/medicines/barcode/$barcode',
+      );
       if (response.data != null) {
         final data = response.data;
         if (data is Map<String, dynamic>) {
@@ -70,14 +78,19 @@ class BarcodeRemoteDataSourceImpl implements BarcodeRemoteDataSource {
         }
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Medicine not found with this barcode');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Medicine not found with this barcode',
+      );
     }
 
     throw Exception('Medicine not found for barcode: $barcode');
   }
 }
 
-final barcodeRemoteDataSourceProvider = Provider<BarcodeRemoteDataSource>((ref) {
+final barcodeRemoteDataSourceProvider = Provider<BarcodeRemoteDataSource>((
+  ref,
+) {
   final dio = ref.watch(dioProvider);
   return BarcodeRemoteDataSourceImpl(dio);
 });

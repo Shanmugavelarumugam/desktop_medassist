@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Supplier {
 
- String get id; String get tenantId; String get name; String get phone; String get email; String get gstNumber; String get address; String get createdAt; String get updatedAt;
+ String get id; String get tenantId; String get name; String get phone; String get email; String get gstNumber; String get address; String get createdAt; String get updatedAt; String? get supplierCode; String? get supplierType; String? get contactPerson; String? get drugLicenseNumber; String? get licenseExpiry; String get status; bool get isPreferred;@JsonKey(fromJson: _parseDouble) double? get rating;@JsonKey(fromJson: _parseIntWithDefault7) int get leadTimeDays;@JsonKey(fromJson: _parseIntWithDefault30) int get paymentTermsDays;@JsonKey(fromJson: _parseDouble) double? get creditLimit;@JsonKey(fromJson: _parseDouble) double? get outstandingBalance;@JsonKey(fromJson: _parseDouble) double? get totalPurchases; String? get bankName; String? get accountNumber; String? get ifscCode;
 /// Create a copy of Supplier
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $SupplierCopyWith<Supplier> get copyWith => _$SupplierCopyWithImpl<Supplier>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Supplier&&(identical(other.id, id) || other.id == id)&&(identical(other.tenantId, tenantId) || other.tenantId == tenantId)&&(identical(other.name, name) || other.name == name)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.email, email) || other.email == email)&&(identical(other.gstNumber, gstNumber) || other.gstNumber == gstNumber)&&(identical(other.address, address) || other.address == address)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Supplier&&(identical(other.id, id) || other.id == id)&&(identical(other.tenantId, tenantId) || other.tenantId == tenantId)&&(identical(other.name, name) || other.name == name)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.email, email) || other.email == email)&&(identical(other.gstNumber, gstNumber) || other.gstNumber == gstNumber)&&(identical(other.address, address) || other.address == address)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.supplierCode, supplierCode) || other.supplierCode == supplierCode)&&(identical(other.supplierType, supplierType) || other.supplierType == supplierType)&&(identical(other.contactPerson, contactPerson) || other.contactPerson == contactPerson)&&(identical(other.drugLicenseNumber, drugLicenseNumber) || other.drugLicenseNumber == drugLicenseNumber)&&(identical(other.licenseExpiry, licenseExpiry) || other.licenseExpiry == licenseExpiry)&&(identical(other.status, status) || other.status == status)&&(identical(other.isPreferred, isPreferred) || other.isPreferred == isPreferred)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.leadTimeDays, leadTimeDays) || other.leadTimeDays == leadTimeDays)&&(identical(other.paymentTermsDays, paymentTermsDays) || other.paymentTermsDays == paymentTermsDays)&&(identical(other.creditLimit, creditLimit) || other.creditLimit == creditLimit)&&(identical(other.outstandingBalance, outstandingBalance) || other.outstandingBalance == outstandingBalance)&&(identical(other.totalPurchases, totalPurchases) || other.totalPurchases == totalPurchases)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.accountNumber, accountNumber) || other.accountNumber == accountNumber)&&(identical(other.ifscCode, ifscCode) || other.ifscCode == ifscCode));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,tenantId,name,phone,email,gstNumber,address,createdAt,updatedAt);
+int get hashCode => Object.hashAll([runtimeType,id,tenantId,name,phone,email,gstNumber,address,createdAt,updatedAt,supplierCode,supplierType,contactPerson,drugLicenseNumber,licenseExpiry,status,isPreferred,rating,leadTimeDays,paymentTermsDays,creditLimit,outstandingBalance,totalPurchases,bankName,accountNumber,ifscCode]);
 
 @override
 String toString() {
-  return 'Supplier(id: $id, tenantId: $tenantId, name: $name, phone: $phone, email: $email, gstNumber: $gstNumber, address: $address, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Supplier(id: $id, tenantId: $tenantId, name: $name, phone: $phone, email: $email, gstNumber: $gstNumber, address: $address, createdAt: $createdAt, updatedAt: $updatedAt, supplierCode: $supplierCode, supplierType: $supplierType, contactPerson: $contactPerson, drugLicenseNumber: $drugLicenseNumber, licenseExpiry: $licenseExpiry, status: $status, isPreferred: $isPreferred, rating: $rating, leadTimeDays: $leadTimeDays, paymentTermsDays: $paymentTermsDays, creditLimit: $creditLimit, outstandingBalance: $outstandingBalance, totalPurchases: $totalPurchases, bankName: $bankName, accountNumber: $accountNumber, ifscCode: $ifscCode)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $SupplierCopyWith<$Res>  {
   factory $SupplierCopyWith(Supplier value, $Res Function(Supplier) _then) = _$SupplierCopyWithImpl;
 @useResult
 $Res call({
- String id, String tenantId, String name, String phone, String email, String gstNumber, String address, String createdAt, String updatedAt
+ String id, String tenantId, String name, String phone, String email, String gstNumber, String address, String createdAt, String updatedAt, String? supplierCode, String? supplierType, String? contactPerson, String? drugLicenseNumber, String? licenseExpiry, String status, bool isPreferred,@JsonKey(fromJson: _parseDouble) double? rating,@JsonKey(fromJson: _parseIntWithDefault7) int leadTimeDays,@JsonKey(fromJson: _parseIntWithDefault30) int paymentTermsDays,@JsonKey(fromJson: _parseDouble) double? creditLimit,@JsonKey(fromJson: _parseDouble) double? outstandingBalance,@JsonKey(fromJson: _parseDouble) double? totalPurchases, String? bankName, String? accountNumber, String? ifscCode
 });
 
 
@@ -65,7 +65,7 @@ class _$SupplierCopyWithImpl<$Res>
 
 /// Create a copy of Supplier
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? tenantId = null,Object? name = null,Object? phone = null,Object? email = null,Object? gstNumber = null,Object? address = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? tenantId = null,Object? name = null,Object? phone = null,Object? email = null,Object? gstNumber = null,Object? address = null,Object? createdAt = null,Object? updatedAt = null,Object? supplierCode = freezed,Object? supplierType = freezed,Object? contactPerson = freezed,Object? drugLicenseNumber = freezed,Object? licenseExpiry = freezed,Object? status = null,Object? isPreferred = null,Object? rating = freezed,Object? leadTimeDays = null,Object? paymentTermsDays = null,Object? creditLimit = freezed,Object? outstandingBalance = freezed,Object? totalPurchases = freezed,Object? bankName = freezed,Object? accountNumber = freezed,Object? ifscCode = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,tenantId: null == tenantId ? _self.tenantId : tenantId // ignore: cast_nullable_to_non_nullable
@@ -76,7 +76,23 @@ as String,gstNumber: null == gstNumber ? _self.gstNumber : gstNumber // ignore: 
 as String,address: null == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as String,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as String,
+as String,supplierCode: freezed == supplierCode ? _self.supplierCode : supplierCode // ignore: cast_nullable_to_non_nullable
+as String?,supplierType: freezed == supplierType ? _self.supplierType : supplierType // ignore: cast_nullable_to_non_nullable
+as String?,contactPerson: freezed == contactPerson ? _self.contactPerson : contactPerson // ignore: cast_nullable_to_non_nullable
+as String?,drugLicenseNumber: freezed == drugLicenseNumber ? _self.drugLicenseNumber : drugLicenseNumber // ignore: cast_nullable_to_non_nullable
+as String?,licenseExpiry: freezed == licenseExpiry ? _self.licenseExpiry : licenseExpiry // ignore: cast_nullable_to_non_nullable
+as String?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,isPreferred: null == isPreferred ? _self.isPreferred : isPreferred // ignore: cast_nullable_to_non_nullable
+as bool,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
+as double?,leadTimeDays: null == leadTimeDays ? _self.leadTimeDays : leadTimeDays // ignore: cast_nullable_to_non_nullable
+as int,paymentTermsDays: null == paymentTermsDays ? _self.paymentTermsDays : paymentTermsDays // ignore: cast_nullable_to_non_nullable
+as int,creditLimit: freezed == creditLimit ? _self.creditLimit : creditLimit // ignore: cast_nullable_to_non_nullable
+as double?,outstandingBalance: freezed == outstandingBalance ? _self.outstandingBalance : outstandingBalance // ignore: cast_nullable_to_non_nullable
+as double?,totalPurchases: freezed == totalPurchases ? _self.totalPurchases : totalPurchases // ignore: cast_nullable_to_non_nullable
+as double?,bankName: freezed == bankName ? _self.bankName : bankName // ignore: cast_nullable_to_non_nullable
+as String?,accountNumber: freezed == accountNumber ? _self.accountNumber : accountNumber // ignore: cast_nullable_to_non_nullable
+as String?,ifscCode: freezed == ifscCode ? _self.ifscCode : ifscCode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -161,10 +177,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String tenantId,  String name,  String phone,  String email,  String gstNumber,  String address,  String createdAt,  String updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String tenantId,  String name,  String phone,  String email,  String gstNumber,  String address,  String createdAt,  String updatedAt,  String? supplierCode,  String? supplierType,  String? contactPerson,  String? drugLicenseNumber,  String? licenseExpiry,  String status,  bool isPreferred, @JsonKey(fromJson: _parseDouble)  double? rating, @JsonKey(fromJson: _parseIntWithDefault7)  int leadTimeDays, @JsonKey(fromJson: _parseIntWithDefault30)  int paymentTermsDays, @JsonKey(fromJson: _parseDouble)  double? creditLimit, @JsonKey(fromJson: _parseDouble)  double? outstandingBalance, @JsonKey(fromJson: _parseDouble)  double? totalPurchases,  String? bankName,  String? accountNumber,  String? ifscCode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Supplier() when $default != null:
-return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that.gstNumber,_that.address,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that.gstNumber,_that.address,_that.createdAt,_that.updatedAt,_that.supplierCode,_that.supplierType,_that.contactPerson,_that.drugLicenseNumber,_that.licenseExpiry,_that.status,_that.isPreferred,_that.rating,_that.leadTimeDays,_that.paymentTermsDays,_that.creditLimit,_that.outstandingBalance,_that.totalPurchases,_that.bankName,_that.accountNumber,_that.ifscCode);case _:
   return orElse();
 
 }
@@ -182,10 +198,10 @@ return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String tenantId,  String name,  String phone,  String email,  String gstNumber,  String address,  String createdAt,  String updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String tenantId,  String name,  String phone,  String email,  String gstNumber,  String address,  String createdAt,  String updatedAt,  String? supplierCode,  String? supplierType,  String? contactPerson,  String? drugLicenseNumber,  String? licenseExpiry,  String status,  bool isPreferred, @JsonKey(fromJson: _parseDouble)  double? rating, @JsonKey(fromJson: _parseIntWithDefault7)  int leadTimeDays, @JsonKey(fromJson: _parseIntWithDefault30)  int paymentTermsDays, @JsonKey(fromJson: _parseDouble)  double? creditLimit, @JsonKey(fromJson: _parseDouble)  double? outstandingBalance, @JsonKey(fromJson: _parseDouble)  double? totalPurchases,  String? bankName,  String? accountNumber,  String? ifscCode)  $default,) {final _that = this;
 switch (_that) {
 case _Supplier():
-return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that.gstNumber,_that.address,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that.gstNumber,_that.address,_that.createdAt,_that.updatedAt,_that.supplierCode,_that.supplierType,_that.contactPerson,_that.drugLicenseNumber,_that.licenseExpiry,_that.status,_that.isPreferred,_that.rating,_that.leadTimeDays,_that.paymentTermsDays,_that.creditLimit,_that.outstandingBalance,_that.totalPurchases,_that.bankName,_that.accountNumber,_that.ifscCode);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +218,10 @@ return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String tenantId,  String name,  String phone,  String email,  String gstNumber,  String address,  String createdAt,  String updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String tenantId,  String name,  String phone,  String email,  String gstNumber,  String address,  String createdAt,  String updatedAt,  String? supplierCode,  String? supplierType,  String? contactPerson,  String? drugLicenseNumber,  String? licenseExpiry,  String status,  bool isPreferred, @JsonKey(fromJson: _parseDouble)  double? rating, @JsonKey(fromJson: _parseIntWithDefault7)  int leadTimeDays, @JsonKey(fromJson: _parseIntWithDefault30)  int paymentTermsDays, @JsonKey(fromJson: _parseDouble)  double? creditLimit, @JsonKey(fromJson: _parseDouble)  double? outstandingBalance, @JsonKey(fromJson: _parseDouble)  double? totalPurchases,  String? bankName,  String? accountNumber,  String? ifscCode)?  $default,) {final _that = this;
 switch (_that) {
 case _Supplier() when $default != null:
-return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that.gstNumber,_that.address,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that.gstNumber,_that.address,_that.createdAt,_that.updatedAt,_that.supplierCode,_that.supplierType,_that.contactPerson,_that.drugLicenseNumber,_that.licenseExpiry,_that.status,_that.isPreferred,_that.rating,_that.leadTimeDays,_that.paymentTermsDays,_that.creditLimit,_that.outstandingBalance,_that.totalPurchases,_that.bankName,_that.accountNumber,_that.ifscCode);case _:
   return null;
 
 }
@@ -217,7 +233,7 @@ return $default(_that.id,_that.tenantId,_that.name,_that.phone,_that.email,_that
 @JsonSerializable()
 
 class _Supplier implements Supplier {
-  const _Supplier({this.id = '', this.tenantId = '', required this.name, this.phone = '', this.email = '', this.gstNumber = '', this.address = '', this.createdAt = '', this.updatedAt = ''});
+  const _Supplier({this.id = '', this.tenantId = '', required this.name, this.phone = '', this.email = '', this.gstNumber = '', this.address = '', this.createdAt = '', this.updatedAt = '', this.supplierCode, this.supplierType, this.contactPerson, this.drugLicenseNumber, this.licenseExpiry, this.status = 'ACTIVE', this.isPreferred = false, @JsonKey(fromJson: _parseDouble) this.rating, @JsonKey(fromJson: _parseIntWithDefault7) this.leadTimeDays = 7, @JsonKey(fromJson: _parseIntWithDefault30) this.paymentTermsDays = 30, @JsonKey(fromJson: _parseDouble) this.creditLimit, @JsonKey(fromJson: _parseDouble) this.outstandingBalance, @JsonKey(fromJson: _parseDouble) this.totalPurchases, this.bankName, this.accountNumber, this.ifscCode});
   factory _Supplier.fromJson(Map<String, dynamic> json) => _$SupplierFromJson(json);
 
 @override@JsonKey() final  String id;
@@ -229,6 +245,22 @@ class _Supplier implements Supplier {
 @override@JsonKey() final  String address;
 @override@JsonKey() final  String createdAt;
 @override@JsonKey() final  String updatedAt;
+@override final  String? supplierCode;
+@override final  String? supplierType;
+@override final  String? contactPerson;
+@override final  String? drugLicenseNumber;
+@override final  String? licenseExpiry;
+@override@JsonKey() final  String status;
+@override@JsonKey() final  bool isPreferred;
+@override@JsonKey(fromJson: _parseDouble) final  double? rating;
+@override@JsonKey(fromJson: _parseIntWithDefault7) final  int leadTimeDays;
+@override@JsonKey(fromJson: _parseIntWithDefault30) final  int paymentTermsDays;
+@override@JsonKey(fromJson: _parseDouble) final  double? creditLimit;
+@override@JsonKey(fromJson: _parseDouble) final  double? outstandingBalance;
+@override@JsonKey(fromJson: _parseDouble) final  double? totalPurchases;
+@override final  String? bankName;
+@override final  String? accountNumber;
+@override final  String? ifscCode;
 
 /// Create a copy of Supplier
 /// with the given fields replaced by the non-null parameter values.
@@ -243,16 +275,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Supplier&&(identical(other.id, id) || other.id == id)&&(identical(other.tenantId, tenantId) || other.tenantId == tenantId)&&(identical(other.name, name) || other.name == name)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.email, email) || other.email == email)&&(identical(other.gstNumber, gstNumber) || other.gstNumber == gstNumber)&&(identical(other.address, address) || other.address == address)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Supplier&&(identical(other.id, id) || other.id == id)&&(identical(other.tenantId, tenantId) || other.tenantId == tenantId)&&(identical(other.name, name) || other.name == name)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.email, email) || other.email == email)&&(identical(other.gstNumber, gstNumber) || other.gstNumber == gstNumber)&&(identical(other.address, address) || other.address == address)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.supplierCode, supplierCode) || other.supplierCode == supplierCode)&&(identical(other.supplierType, supplierType) || other.supplierType == supplierType)&&(identical(other.contactPerson, contactPerson) || other.contactPerson == contactPerson)&&(identical(other.drugLicenseNumber, drugLicenseNumber) || other.drugLicenseNumber == drugLicenseNumber)&&(identical(other.licenseExpiry, licenseExpiry) || other.licenseExpiry == licenseExpiry)&&(identical(other.status, status) || other.status == status)&&(identical(other.isPreferred, isPreferred) || other.isPreferred == isPreferred)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.leadTimeDays, leadTimeDays) || other.leadTimeDays == leadTimeDays)&&(identical(other.paymentTermsDays, paymentTermsDays) || other.paymentTermsDays == paymentTermsDays)&&(identical(other.creditLimit, creditLimit) || other.creditLimit == creditLimit)&&(identical(other.outstandingBalance, outstandingBalance) || other.outstandingBalance == outstandingBalance)&&(identical(other.totalPurchases, totalPurchases) || other.totalPurchases == totalPurchases)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.accountNumber, accountNumber) || other.accountNumber == accountNumber)&&(identical(other.ifscCode, ifscCode) || other.ifscCode == ifscCode));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,tenantId,name,phone,email,gstNumber,address,createdAt,updatedAt);
+int get hashCode => Object.hashAll([runtimeType,id,tenantId,name,phone,email,gstNumber,address,createdAt,updatedAt,supplierCode,supplierType,contactPerson,drugLicenseNumber,licenseExpiry,status,isPreferred,rating,leadTimeDays,paymentTermsDays,creditLimit,outstandingBalance,totalPurchases,bankName,accountNumber,ifscCode]);
 
 @override
 String toString() {
-  return 'Supplier(id: $id, tenantId: $tenantId, name: $name, phone: $phone, email: $email, gstNumber: $gstNumber, address: $address, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Supplier(id: $id, tenantId: $tenantId, name: $name, phone: $phone, email: $email, gstNumber: $gstNumber, address: $address, createdAt: $createdAt, updatedAt: $updatedAt, supplierCode: $supplierCode, supplierType: $supplierType, contactPerson: $contactPerson, drugLicenseNumber: $drugLicenseNumber, licenseExpiry: $licenseExpiry, status: $status, isPreferred: $isPreferred, rating: $rating, leadTimeDays: $leadTimeDays, paymentTermsDays: $paymentTermsDays, creditLimit: $creditLimit, outstandingBalance: $outstandingBalance, totalPurchases: $totalPurchases, bankName: $bankName, accountNumber: $accountNumber, ifscCode: $ifscCode)';
 }
 
 
@@ -263,7 +295,7 @@ abstract mixin class _$SupplierCopyWith<$Res> implements $SupplierCopyWith<$Res>
   factory _$SupplierCopyWith(_Supplier value, $Res Function(_Supplier) _then) = __$SupplierCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String tenantId, String name, String phone, String email, String gstNumber, String address, String createdAt, String updatedAt
+ String id, String tenantId, String name, String phone, String email, String gstNumber, String address, String createdAt, String updatedAt, String? supplierCode, String? supplierType, String? contactPerson, String? drugLicenseNumber, String? licenseExpiry, String status, bool isPreferred,@JsonKey(fromJson: _parseDouble) double? rating,@JsonKey(fromJson: _parseIntWithDefault7) int leadTimeDays,@JsonKey(fromJson: _parseIntWithDefault30) int paymentTermsDays,@JsonKey(fromJson: _parseDouble) double? creditLimit,@JsonKey(fromJson: _parseDouble) double? outstandingBalance,@JsonKey(fromJson: _parseDouble) double? totalPurchases, String? bankName, String? accountNumber, String? ifscCode
 });
 
 
@@ -280,7 +312,7 @@ class __$SupplierCopyWithImpl<$Res>
 
 /// Create a copy of Supplier
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? tenantId = null,Object? name = null,Object? phone = null,Object? email = null,Object? gstNumber = null,Object? address = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? tenantId = null,Object? name = null,Object? phone = null,Object? email = null,Object? gstNumber = null,Object? address = null,Object? createdAt = null,Object? updatedAt = null,Object? supplierCode = freezed,Object? supplierType = freezed,Object? contactPerson = freezed,Object? drugLicenseNumber = freezed,Object? licenseExpiry = freezed,Object? status = null,Object? isPreferred = null,Object? rating = freezed,Object? leadTimeDays = null,Object? paymentTermsDays = null,Object? creditLimit = freezed,Object? outstandingBalance = freezed,Object? totalPurchases = freezed,Object? bankName = freezed,Object? accountNumber = freezed,Object? ifscCode = freezed,}) {
   return _then(_Supplier(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,tenantId: null == tenantId ? _self.tenantId : tenantId // ignore: cast_nullable_to_non_nullable
@@ -291,7 +323,23 @@ as String,gstNumber: null == gstNumber ? _self.gstNumber : gstNumber // ignore: 
 as String,address: null == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as String,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as String,
+as String,supplierCode: freezed == supplierCode ? _self.supplierCode : supplierCode // ignore: cast_nullable_to_non_nullable
+as String?,supplierType: freezed == supplierType ? _self.supplierType : supplierType // ignore: cast_nullable_to_non_nullable
+as String?,contactPerson: freezed == contactPerson ? _self.contactPerson : contactPerson // ignore: cast_nullable_to_non_nullable
+as String?,drugLicenseNumber: freezed == drugLicenseNumber ? _self.drugLicenseNumber : drugLicenseNumber // ignore: cast_nullable_to_non_nullable
+as String?,licenseExpiry: freezed == licenseExpiry ? _self.licenseExpiry : licenseExpiry // ignore: cast_nullable_to_non_nullable
+as String?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,isPreferred: null == isPreferred ? _self.isPreferred : isPreferred // ignore: cast_nullable_to_non_nullable
+as bool,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
+as double?,leadTimeDays: null == leadTimeDays ? _self.leadTimeDays : leadTimeDays // ignore: cast_nullable_to_non_nullable
+as int,paymentTermsDays: null == paymentTermsDays ? _self.paymentTermsDays : paymentTermsDays // ignore: cast_nullable_to_non_nullable
+as int,creditLimit: freezed == creditLimit ? _self.creditLimit : creditLimit // ignore: cast_nullable_to_non_nullable
+as double?,outstandingBalance: freezed == outstandingBalance ? _self.outstandingBalance : outstandingBalance // ignore: cast_nullable_to_non_nullable
+as double?,totalPurchases: freezed == totalPurchases ? _self.totalPurchases : totalPurchases // ignore: cast_nullable_to_non_nullable
+as double?,bankName: freezed == bankName ? _self.bankName : bankName // ignore: cast_nullable_to_non_nullable
+as String?,accountNumber: freezed == accountNumber ? _self.accountNumber : accountNumber // ignore: cast_nullable_to_non_nullable
+as String?,ifscCode: freezed == ifscCode ? _self.ifscCode : ifscCode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

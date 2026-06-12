@@ -4,7 +4,7 @@ import '../../domain/repository/barcode_repository.dart';
 import '../state/barcode_state.dart';
 
 class BarcodeNotifier extends Notifier<BarcodeState> {
-  late final BarcodeRepository _repository;
+  late BarcodeRepository _repository;
 
   @override
   BarcodeState build() {
@@ -14,13 +14,17 @@ class BarcodeNotifier extends Notifier<BarcodeState> {
 
   Future<void> generateBarcode(String text, {String? format}) async {
     final activeFormat = format ?? state.selectedFormat;
-    state = state.copyWith(isLoading: true, errorMessage: null, selectedFormat: activeFormat);
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      selectedFormat: activeFormat,
+    );
     try {
-      final bytes = await _repository.generateBarcode(text: text, type: activeFormat);
-      state = state.copyWith(
-        generatedBarcodeBytes: bytes,
-        isLoading: false,
+      final bytes = await _repository.generateBarcode(
+        text: text,
+        type: activeFormat,
       );
+      state = state.copyWith(generatedBarcodeBytes: bytes, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -33,7 +37,9 @@ class BarcodeNotifier extends Notifier<BarcodeState> {
     if (barcode.trim().isEmpty) return;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final medicine = await _repository.lookupMedicineByBarcode(barcode.trim());
+      final medicine = await _repository.lookupMedicineByBarcode(
+        barcode.trim(),
+      );
       state = state.copyWith(
         lookupResult: medicine,
         lookupBarcode: barcode.trim(),
@@ -64,5 +70,6 @@ class BarcodeNotifier extends Notifier<BarcodeState> {
   }
 }
 
-final barcodeNotifierProvider =
-    NotifierProvider<BarcodeNotifier, BarcodeState>(BarcodeNotifier.new);
+final barcodeNotifierProvider = NotifierProvider<BarcodeNotifier, BarcodeState>(
+  BarcodeNotifier.new,
+);

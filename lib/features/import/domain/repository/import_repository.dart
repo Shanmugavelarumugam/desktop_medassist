@@ -18,5 +18,4 @@ abstract class ImportRepository {
     required Map<String, dynamic> barcodeOptions,
   });
   Future<Map<String, dynamic>> getImportStatus(String jobId);
-
 }

@@ -18,9 +18,11 @@ abstract class ImportState with _$ImportState {
     @Default({}) Map<String, String> columnMapping,
     @Default('None') String supplier,
     @Default('Skip') String duplicateStrategy,
-    @Default({'autoGen': true, 'overwrite': false, 'validate': true}) Map<String, dynamic> barcodeOptions,
+    @Default({'autoGen': true, 'overwrite': false, 'validate': true})
+    Map<String, dynamic> barcodeOptions,
     Map<String, dynamic>? analysisSummary,
-    @Default('idle') String currentStep, // idle, parsed, checking, importing, complete
+    @Default('idle')
+    String currentStep, // idle, parsed, checking, importing, complete
     String? jobId,
     @Default(0.0) double uploadProgress,
     String? fileName,

@@ -13,9 +13,15 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this._remoteDataSource, this._localDataSource);
 
   @override
-  Future<AuthUser> login({required String email, required String password}) async {
+  Future<AuthUser> login({
+    required String email,
+    required String password,
+  }) async {
     try {
-      final response = await _remoteDataSource.login(email: email, password: password);
+      final response = await _remoteDataSource.login(
+        email: email,
+        password: password,
+      );
       if (response.data != null && response.data['success'] == true) {
         final data = response.data['data'];
         final token = data['token'];
@@ -29,11 +35,15 @@ class AuthRepositoryImpl implements AuthRepository {
 
         return userData;
       } else {
-        throw Exception(response.data?['error']?['message'] ?? 'Authentication failed');
+        throw Exception(
+          response.data?['error']?['message'] ?? 'Authentication failed',
+        );
       }
     } on DioException catch (e) {
       developer.log("DioException in Repository: ${e.response?.data}");
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error');
+      throw Exception(
+        e.response?.data?['error']?['message'] ?? 'Network error',
+      );
     } catch (e) {
       developer.log("Exception in Repository login: $e");
       throw Exception(e.toString());
@@ -65,10 +75,14 @@ class AuthRepositoryImpl implements AuthRepository {
         // Automatically perform login on successful registration
         return await login(email: email, password: password);
       } else {
-        throw Exception(response.data?['error']?['message'] ?? 'Registration failed');
+        throw Exception(
+          response.data?['error']?['message'] ?? 'Registration failed',
+        );
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network or validation error');
+      throw Exception(
+        e.response?.data?['error']?['message'] ?? 'Network or validation error',
+      );
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -94,6 +108,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> saveSessionUser(AuthUser user) async {
+    await _localDataSource.saveUser(user);
+  }
+
+  @override
   Future<String?> getSessionToken() async {
     return await _localDataSource.getToken();
   }
@@ -103,44 +122,71 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final response = await _remoteDataSource.forgotPassword(email: email);
       if (response.data == null || response.data['success'] != true) {
-        throw Exception(response.data?['error']?['message'] ?? 'Forgot password request failed');
+        throw Exception(
+          response.data?['error']?['message'] ??
+              'Forgot password request failed',
+        );
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error');
+      throw Exception(
+        e.response?.data?['error']?['message'] ?? 'Network error',
+      );
     } catch (e) {
       throw Exception(e.toString());
     }
   }
 
   @override
-  Future<String> verifyResetOtp({required String email, required String otp}) async {
+  Future<String> verifyResetOtp({
+    required String email,
+    required String otp,
+  }) async {
     try {
-      final response = await _remoteDataSource.verifyResetOtp(email: email, otp: otp);
+      final response = await _remoteDataSource.verifyResetOtp(
+        email: email,
+        otp: otp,
+      );
       if (response.data != null && response.data['success'] == true) {
         final token = response.data['data']?['resetToken'];
         if (token == null || (token is String && token.isEmpty)) {
-          throw Exception('Reset token missing from backend response. Please contact support.');
+          throw Exception(
+            'Reset token missing from backend response. Please contact support.',
+          );
         }
         return token.toString();
       } else {
-        throw Exception(response.data?['error']?['message'] ?? 'OTP verification failed');
+        throw Exception(
+          response.data?['error']?['message'] ?? 'OTP verification failed',
+        );
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error');
+      throw Exception(
+        e.response?.data?['error']?['message'] ?? 'Network error',
+      );
     } catch (e) {
       throw Exception(e.toString());
     }
   }
 
   @override
-  Future<void> resetPassword({required String resetToken, required String newPassword}) async {
+  Future<void> resetPassword({
+    required String resetToken,
+    required String newPassword,
+  }) async {
     try {
-      final response = await _remoteDataSource.resetPassword(resetToken: resetToken, newPassword: newPassword);
+      final response = await _remoteDataSource.resetPassword(
+        resetToken: resetToken,
+        newPassword: newPassword,
+      );
       if (response.data == null || response.data['success'] != true) {
-        throw Exception(response.data?['error']?['message'] ?? 'Password reset failed');
+        throw Exception(
+          response.data?['error']?['message'] ?? 'Password reset failed',
+        );
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error');
+      throw Exception(
+        e.response?.data?['error']?['message'] ?? 'Network error',
+      );
     } catch (e) {
       throw Exception(e.toString());
     }

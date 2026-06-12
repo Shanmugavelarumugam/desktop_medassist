@@ -5,10 +5,10 @@ import '../../../../core/network/dio_client.dart';
 import '../../domain/models/medicine.dart';
 
 abstract class InventoryRemoteDataSource {
-  Future<List<Medicine>> getMedicines();
+  Future<List<Medicine>> getMedicines({String? search, int? limit});
   Future<List<MedicineCategory>> getCategories();
   Future<List<Manufacturer>> getManufacturers();
-  
+
   Future<Medicine> createMedicine({
     required String name,
     required String genericName,
@@ -45,6 +45,8 @@ abstract class InventoryRemoteDataSource {
 
   Future<void> deleteMedicine({required String id});
 
+  Future<Map<String, dynamic>> getSummary();
+
   Future<void> addBatch({
     required String medicineId,
     required String batchNumber,
@@ -61,16 +63,46 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
   InventoryRemoteDataSourceImpl(this._dio);
 
   @override
-  Future<List<Medicine>> getMedicines() async {
+  Future<Map<String, dynamic>> getSummary() async {
+    try {
+      final response = await _dio.get('/api/inventory/summary');
+      if (response.data != null && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      throw Exception(
+        response.data?['message'] ?? 'Failed to load inventory summary',
+      );
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error fetching inventory summary',
+      );
+    }
+  }
+
+  @override
+  Future<List<Medicine>> getMedicines({String? search, int? limit}) async {
     try {
       developer.log("GET MEDICINES CALL STARTED");
+      final queryParams = <String, dynamic>{'limit': limit ?? 1000};
+      if (search != null && search.trim().isNotEmpty) {
+        queryParams['search'] = search.trim();
+      }
       final response = await _dio.get(
         '/api/inventory/medicines',
-        queryParameters: {'limit': 500},
+        queryParameters: queryParams,
       );
       developer.log("GET MEDICINES RESPONSE STATUS: ${response.statusCode}");
       if (response.data != null && response.data['success'] == true) {
-        final List list = response.data['data'] ?? [];
+        final data = response.data['data'];
+        final List list;
+        if (data is List) {
+          list = data;
+        } else if (data is Map && data['items'] is List) {
+          list = data['items'];
+        } else {
+          list = [];
+        }
         developer.log("MAPPING ${list.length} MEDICINES FROM JSON...");
         final medicines = list.map((json) {
           try {
@@ -82,21 +114,19 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
             rethrow;
           }
         }).toList();
-        developer.log("MAPPED MEDICINES SUCCESSFULLY.");
-
-        for (final med in medicines) {
-          // ignore: avoid_print
-          print(
-            'MEDICINE => ${med.name} | MRP=${med.mrp} | Purchase=${med.purchasePrice} | Batch=${med.batchNumber}',
-          );
-        }
+        developer.log("LOADED ${medicines.length} MEDICINES SUCCESSFULLY.");
 
         return medicines;
       }
       throw Exception(response.data?['message'] ?? 'Failed to load medicines');
     } on DioException catch (e) {
-      developer.log("DIO EXCEPTION FETCHING MEDICINES: ${e.response?.statusCode} - ${e.response?.data}");
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error fetching medicines');
+      developer.log(
+        "DIO EXCEPTION FETCHING MEDICINES: ${e.response?.statusCode} - ${e.response?.data}",
+      );
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error fetching medicines',
+      );
     } catch (e, stack) {
       developer.log("UNEXPECTED ERROR FETCHING MEDICINES: $e");
       developer.log("STACKTRACE: $stack");
@@ -114,7 +144,10 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       }
       throw Exception(response.data?['message'] ?? 'Failed to load categories');
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error fetching categories');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error fetching categories',
+      );
     }
   }
 
@@ -126,9 +159,14 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
         final List list = response.data['data'] ?? [];
         return list.map((json) => Manufacturer.fromJson(json)).toList();
       }
-      throw Exception(response.data?['message'] ?? 'Failed to load manufacturers');
+      throw Exception(
+        response.data?['message'] ?? 'Failed to load manufacturers',
+      );
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error fetching manufacturers');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error fetching manufacturers',
+      );
     }
   }
 
@@ -152,33 +190,39 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     String? notes,
   }) async {
     try {
-      final response = await _dio.post('/api/inventory/medicines', data: {
-        'name': name.trim(),
-        'genericName': genericName.trim(),
-        'categoryId': categoryId,
-        'gstPercentage': gstPercentage ?? 12.0,
-        'reorderLevel': reorderLevel ?? 10,
-        'prescriptionRequired': prescriptionRequired ?? false,
-        'manufacturerId': ?manufacturerId,
-        'hsnCode': ?hsnCode?.trim(),
-        'barcode': ?barcode?.trim(),
-        'supplier': ?supplier?.trim(),
-        'notes': ?notes?.trim(),
-        'initialBatch': {
-          'batchNumber': batchNumber.trim(),
-          'expiryDate': expiryDate,
-          'quantity': quantity,
-          'purchasePrice': purchasePrice,
-          'mrp': mrp,
-        }
-      });
+      final response = await _dio.post(
+        '/api/inventory/medicines',
+        data: {
+          'name': name.trim(),
+          'genericName': genericName.trim(),
+          'categoryId': categoryId,
+          'gstPercentage': gstPercentage ?? 12.0,
+          'reorderLevel': reorderLevel ?? 10,
+          'prescriptionRequired': prescriptionRequired ?? false,
+          'manufacturerId': ?manufacturerId,
+          'hsnCode': ?hsnCode?.trim(),
+          'barcode': ?barcode?.trim(),
+          'supplier': ?supplier?.trim(),
+          'notes': ?notes?.trim(),
+          'initialBatch': {
+            'batchNumber': batchNumber.trim(),
+            'expiryDate': expiryDate,
+            'quantity': quantity,
+            'purchasePrice': purchasePrice,
+            'mrp': mrp,
+          },
+        },
+      );
 
       if (response.data != null && response.data['success'] == true) {
         return Medicine.fromJson(response.data['data']);
       }
       throw Exception(response.data?['message'] ?? 'Failed to create medicine');
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error creating medicine');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error creating medicine',
+      );
     }
   }
 
@@ -198,26 +242,32 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     String? notes,
   }) async {
     try {
-      final response = await _dio.put('/api/inventory/medicines/$id', data: {
-        'name': name.trim(),
-        'genericName': ?genericName?.trim(),
-        'categoryId': ?categoryId,
-        'manufacturerId': ?manufacturerId,
-        'gstPercentage': ?gstPercentage,
-        'reorderLevel': ?reorderLevel,
-        'prescriptionRequired': ?prescriptionRequired,
-        'hsnCode': ?hsnCode?.trim(),
-        'barcode': ?barcode?.trim(),
-        'supplier': ?supplier?.trim(),
-        'notes': ?notes?.trim(),
-      });
+      final response = await _dio.put(
+        '/api/inventory/medicines/$id',
+        data: {
+          'name': name.trim(),
+          'genericName': ?genericName?.trim(),
+          'categoryId': ?categoryId,
+          'manufacturerId': ?manufacturerId,
+          'gstPercentage': ?gstPercentage,
+          'reorderLevel': ?reorderLevel,
+          'prescriptionRequired': ?prescriptionRequired,
+          'hsnCode': ?hsnCode?.trim(),
+          'barcode': ?barcode?.trim(),
+          'supplier': ?supplier?.trim(),
+          'notes': ?notes?.trim(),
+        },
+      );
 
       if (response.data != null && response.data['success'] == true) {
         return Medicine.fromJson(response.data['data']);
       }
       throw Exception(response.data?['message'] ?? 'Failed to update medicine');
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error updating medicine');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error updating medicine',
+      );
     }
   }
 
@@ -230,7 +280,10 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       }
       throw Exception(response.data?['message'] ?? 'Failed to delete medicine');
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error deleting medicine');
+      throw Exception(
+        e.response?.data?['error']?['message'] ??
+            'Network error deleting medicine',
+      );
     }
   }
 
@@ -244,25 +297,32 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     required double mrp,
   }) async {
     try {
-      final response = await _dio.post('/api/inventory/medicines/$medicineId/batches', data: {
-        'batchNumber': batchNumber.trim(),
-        'quantity': quantity,
-        'expiryDate': expiryDate,
-        'purchasePrice': purchasePrice,
-        'mrp': mrp,
-      });
+      final response = await _dio.post(
+        '/api/inventory/medicines/$medicineId/batches',
+        data: {
+          'batchNumber': batchNumber.trim(),
+          'quantity': quantity,
+          'expiryDate': expiryDate,
+          'purchasePrice': purchasePrice,
+          'mrp': mrp,
+        },
+      );
       if (response.data != null && response.data['success'] == true) {
         return;
       }
       throw Exception(response.data?['message'] ?? 'Failed to add batch');
     } on DioException catch (e) {
-      throw Exception(e.response?.data?['error']?['message'] ?? 'Network error adding batch');
+      throw Exception(
+        e.response?.data?['error']?['message'] ?? 'Network error adding batch',
+      );
     }
   }
 }
 
 // Global Injectable InventoryRemoteDataSource Provider
-final inventoryRemoteDataSourceProvider = Provider<InventoryRemoteDataSource>((ref) {
+final inventoryRemoteDataSourceProvider = Provider<InventoryRemoteDataSource>((
+  ref,
+) {
   final dio = ref.watch(dioProvider);
   return InventoryRemoteDataSourceImpl(dio);
 });

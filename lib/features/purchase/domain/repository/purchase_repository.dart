@@ -27,5 +27,18 @@ abstract class PurchaseRepository {
     required String email,
     required String gstNumber,
     required String address,
+    String? supplierType,
+    String? contactPerson,
+    String? drugLicenseNumber,
+    String? licenseExpiry,
+    String? status,
+    bool? isPreferred,
+    double? rating,
+    int? leadTimeDays,
+    int? paymentTermsDays,
+    double? creditLimit,
+    String? bankName,
+    String? accountNumber,
+    String? ifscCode,
   });
 }

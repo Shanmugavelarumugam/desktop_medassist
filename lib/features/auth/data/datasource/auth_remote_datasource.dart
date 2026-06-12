@@ -16,7 +16,10 @@ abstract class AuthRemoteDataSource {
   Future<void> logout({required String token});
   Future<Response> forgotPassword({required String email});
   Future<Response> verifyResetOtp({required String email, required String otp});
-  Future<Response> resetPassword({required String resetToken, required String newPassword});
+  Future<Response> resetPassword({
+    required String resetToken,
+    required String newPassword,
+  });
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -25,12 +28,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   AuthRemoteDataSourceImpl(this._dio);
 
   @override
-  Future<Response> login({required String email, required String password}) async {
-    return await _dio.post('/api/auth/login', data: {
-      'email': email.trim().toLowerCase(),
-      'password': password.trim(),
-      'deviceName': 'Desktop App',
-    });
+  Future<Response> login({
+    required String email,
+    required String password,
+  }) async {
+    return await _dio.post(
+      '/api/auth/login',
+      data: {
+        'email': email.trim().toLowerCase(),
+        'password': password.trim(),
+        'deviceName': 'Desktop App',
+      },
+    );
   }
 
   @override
@@ -43,15 +52,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String shopName,
     required String branchName,
   }) async {
-    return await _dio.post('/api/auth/register', data: {
-      'email': email.trim().toLowerCase(),
-      'password': password.trim(),
-      'confirmPassword': confirmPassword.trim(),
-      'fullName': fullName.trim(),
-      'role': role,
-      'shopName': shopName.trim(),
-      'branchName': branchName.trim(),
-    });
+    return await _dio.post(
+      '/api/auth/register',
+      data: {
+        'email': email.trim().toLowerCase(),
+        'password': password.trim(),
+        'confirmPassword': confirmPassword.trim(),
+        'fullName': fullName.trim(),
+        'role': role,
+        'shopName': shopName.trim(),
+        'branchName': branchName.trim(),
+      },
+    );
   }
 
   @override
@@ -65,25 +77,32 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<Response> forgotPassword({required String email}) async {
-    return await _dio.post('/api/auth/forgot-password', data: {
-      'email': email.trim().toLowerCase(),
-    });
+    return await _dio.post(
+      '/api/auth/forgot-password',
+      data: {'email': email.trim().toLowerCase()},
+    );
   }
 
   @override
-  Future<Response> verifyResetOtp({required String email, required String otp}) async {
-    return await _dio.post('/api/auth/verify-reset-otp', data: {
-      'email': email.trim().toLowerCase(),
-      'otp': otp.trim(),
-    });
+  Future<Response> verifyResetOtp({
+    required String email,
+    required String otp,
+  }) async {
+    return await _dio.post(
+      '/api/auth/verify-reset-otp',
+      data: {'email': email.trim().toLowerCase(), 'otp': otp.trim()},
+    );
   }
 
   @override
-  Future<Response> resetPassword({required String resetToken, required String newPassword}) async {
-    return await _dio.post('/api/auth/reset-password', data: {
-      'resetToken': resetToken,
-      'newPassword': newPassword,
-    });
+  Future<Response> resetPassword({
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    return await _dio.post(
+      '/api/auth/reset-password',
+      data: {'resetToken': resetToken, 'newPassword': newPassword},
+    );
   }
 }
 
