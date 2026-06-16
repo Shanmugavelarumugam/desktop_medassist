@@ -4,9 +4,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../domain/models/auth_user.dart';
 
 abstract class AuthLocalDataSource {
-  Future<void> saveToken(String token);
+  Future<void> saveToken(String? token);
   Future<String?> getToken();
-  Future<void> saveRefreshToken(String token);
+  Future<void> saveRefreshToken(String? token);
   Future<String?> getRefreshToken();
   Future<void> saveUser(AuthUser user);
   Future<AuthUser?> getUser();
@@ -23,8 +23,10 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   static const _userKey = 'auth_user';
 
   @override
-  Future<void> saveToken(String token) async {
-    await _secureStorage.write(key: _tokenKey, value: token);
+  Future<void> saveToken(String? token) async {
+    if (token != null && token.isNotEmpty) {
+      await _secureStorage.write(key: _tokenKey, value: token);
+    }
   }
 
   @override
@@ -33,8 +35,10 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   }
 
   @override
-  Future<void> saveRefreshToken(String token) async {
-    await _secureStorage.write(key: _refreshTokenKey, value: token);
+  Future<void> saveRefreshToken(String? token) async {
+    if (token != null) {
+      await _secureStorage.write(key: _refreshTokenKey, value: token);
+    }
   }
 
   @override

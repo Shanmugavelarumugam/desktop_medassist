@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1166,23 +1167,60 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(fontSize: 14, color: Colors.black),
-                      children: [
-                        const TextSpan(
-                          text: 'PHONE: ',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                  () {
+                    final notes = invoice.notes;
+                    if (notes == null || notes.isEmpty) return const SizedBox.shrink();
+                    String docName = '';
+                    try {
+                      final decoded = jsonDecode(notes);
+                      if (decoded is Map && decoded.containsKey('doctorName')) {
+                        docName = decoded['doctorName']?.toString() ?? '';
+                      }
+                    } catch (_) {
+                      final parts = notes.split('|');
+                      for (final part in parts) {
+                        final trimmed = part.trim();
+                        if (trimmed.startsWith('Doctor:')) {
+                          docName = trimmed.replaceFirst('Doctor:', '').trim();
+                          break;
+                        }
+                      }
+                    }
+                    if (docName.isEmpty) return const SizedBox.shrink();
+                    final displayDoc = (docName.toLowerCase().startsWith('dr.') || docName.toLowerCase().startsWith('dr '))
+                        ? docName
+                        : 'Dr. $docName';
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: RichText(
+                        text: TextSpan(
+                          style: const TextStyle(fontSize: 14, color: Colors.black),
+                          children: [
+                            const TextSpan(
+                              text: 'DOCTOR: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: displayDoc),
+                          ],
                         ),
-                        TextSpan(
-                          text: invoice.patientPhone.isNotEmpty
-                              ? invoice.patientPhone
-                              : '',
-                        ),
-                      ],
+                      ),
+                    );
+                  }(),
+                  if (invoice.patientPhone.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 14, color: Colors.black),
+                        children: [
+                          const TextSpan(
+                            text: 'PHONE: ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(text: invoice.patientPhone),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 24),
                   const Divider(color: Colors.black, thickness: 1.5),
 
@@ -1556,8 +1594,9 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen>
     _applyCalculatedDiscount();
 
     final filteredMeds = allMedicines.where((med) {
-      if (_selectedCategory != 'All' && med.categoryId != _selectedCategory)
+      if (_selectedCategory != 'All' && med.categoryId != _selectedCategory) {
         return false;
+      }
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
       return med.name.toLowerCase().contains(q) ||
@@ -2602,10 +2641,11 @@ class _BillingPosScreenState extends ConsumerState<BillingPosScreen>
                                               ),
                                             ],
                                             onChanged: (val) {
-                                              if (val != null)
+                                              if (val != null) {
                                                 setState(
                                                   () => _discountType = val,
                                                 );
+                                              }
                                             },
                                           ),
                                         ),

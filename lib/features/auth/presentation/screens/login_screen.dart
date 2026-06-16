@@ -448,8 +448,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               icon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               validator: (val) {
-                if (val == null || val.isEmpty)
+                if (val == null || val.isEmpty) {
                   return 'Please enter your email';
+                }
                 // ignore: deprecated_member_use
                 if (!RegExp(
                   r'^^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
@@ -691,8 +692,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               icon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               validator: (val) {
-                if (val == null || val.isEmpty)
+                if (val == null || val.isEmpty) {
                   return 'Please enter your email';
+                }
                 // ignore: deprecated_member_use
                 if (!RegExp(
                   r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
@@ -745,10 +747,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
               validator: (val) {
-                if (val == null || val.isEmpty)
+                if (val == null || val.isEmpty) {
                   return 'Please confirm your password';
-                if (val != _passwordController.text)
+                }
+                if (val != _passwordController.text) {
                   return 'Passwords do not match';
+                }
                 return null;
               },
               onFieldSubmitted: (_) => _handleSignup(),
@@ -1167,8 +1171,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               icon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               validator: (val) {
-                if (val == null || val.isEmpty)
+                if (val == null || val.isEmpty) {
                   return 'Please enter your email';
+                }
                 // ignore: deprecated_member_use
                 if (!RegExp(
                   r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
@@ -1189,8 +1194,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 icon: Icons.pin_outlined,
                 keyboardType: TextInputType.number,
                 validator: (val) {
-                  if (val == null || val.isEmpty)
+                  if (val == null || val.isEmpty) {
                     return 'Please enter the 6-digit OTP';
+                  }
                   if (val.length != 6 || int.tryParse(val) == null) {
                     return 'OTP must be exactly 6 numeric digits';
                   }
@@ -1423,10 +1429,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     setState(() => _obscureNewPassword = !_obscureNewPassword),
               ),
               validator: (val) {
-                if (val == null || val.isEmpty)
+                if (val == null || val.isEmpty) {
                   return 'Please enter a new password';
-                if (val.length < 8)
+                }
+                if (val.length < 8) {
                   return 'Password must be at least 8 characters';
+                }
                 return null;
               },
               onFieldSubmitted: (_) async {

@@ -85,8 +85,9 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       final phoneMatch = inv.patientPhone.toLowerCase().contains(
         _searchQuery.toLowerCase(),
       );
-      if (_searchQuery.isNotEmpty && !numberMatch && !nameMatch && !phoneMatch)
+      if (_searchQuery.isNotEmpty && !numberMatch && !nameMatch && !phoneMatch) {
         return false;
+      }
 
       // 2. Tab specific filters
       try {
@@ -672,10 +673,6 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                       ),
                                       Expanded(
                                         flex: 3,
-                                        child: _TableHeaderText('BILL #'),
-                                      ),
-                                      Expanded(
-                                        flex: 3,
                                         child: _TableHeaderText('PATIENT'),
                                       ),
                                       Expanded(
@@ -753,12 +750,8 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                                 () => _hoveredInvoiceId = null,
                                               ),
                                               child: InkWell(
-                                                onTap: () {
-                                                  setState(() {
-                                                    _selectedInvoice =
-                                                        isSelected ? null : inv;
-                                                  });
-                                                },
+                                                onTap: () =>
+                                                    _showSalesDetailDialog(inv),
                                                 child: AnimatedContainer(
                                                   duration: const Duration(
                                                     milliseconds: 150,
@@ -783,20 +776,6 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                                               const TextStyle(
                                                                 fontSize: 12,
                                                                 color: softGrey,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 3,
-                                                        child: Text(
-                                                          inv.invoiceNumber,
-                                                          style:
-                                                              const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                fontSize: 12,
-                                                                color: textDark,
                                                               ),
                                                         ),
                                                       ),
@@ -921,31 +900,27 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                                               const SizedBox(
                                                                 width: 8,
                                                               ),
-                                                              IconButton(
-                                                                padding:
-                                                                    EdgeInsets
-                                                                        .zero,
-                                                                constraints:
-                                                                    const BoxConstraints(
-                                                                      minWidth:
-                                                                          28,
-                                                                      minHeight:
-                                                                          28,
-                                                                    ),
-                                                                icon: const Icon(
-                                                                  Icons
-                                                                      .visibility_outlined,
-                                                                  size: 16,
-                                                                ),
-                                                                tooltip:
-                                                                    'View Details',
-                                                                onPressed: () {
-                                                                  setState(() {
-                                                                    _selectedInvoice =
-                                                                        inv;
-                                                                  });
-                                                                },
-                                                              ),
+                                                               IconButton(
+                                                                 padding:
+                                                                     EdgeInsets
+                                                                         .zero,
+                                                                 constraints:
+                                                                     const BoxConstraints(
+                                                                       minWidth:
+                                                                           28,
+                                                                       minHeight:
+                                                                           28,
+                                                                     ),
+                                                                 icon: const Icon(
+                                                                   Icons
+                                                                       .visibility_outlined,
+                                                                   size: 16,
+                                                                 ),
+                                                                 tooltip:
+                                                                     'View Details',
+                                                                 onPressed: () =>
+                                                                     _showSalesDetailDialog(inv),
+                                                               ),
                                                               if (inv.status !=
                                                                   'CANCELLED') ...[
                                                                 const SizedBox(
@@ -1283,6 +1258,363 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showSalesDetailDialog(Invoice inv) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 60, vertical: 32),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 780,
+            maxHeight: MediaQuery.of(context).size.height * 0.9,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildSalesDialogHeader(inv),
+                Flexible(
+                  child: Container(
+                    color: bgGrey,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSalesSectionLabel('Patient Info', Icons.person_outline_rounded),
+                          const SizedBox(height: 12),
+                          _buildSalesInfoGrid([
+                            _SalesInfoField(icon: Icons.person_rounded, label: 'Name', value: inv.patientName),
+                            _SalesInfoField(icon: Icons.phone_rounded, label: 'Phone', value: inv.patientPhone),
+                          ]),
+                          const SizedBox(height: 20),
+                          _buildSalesSectionLabel('Invoice Items', Icons.inventory_2_outlined),
+                          const SizedBox(height: 12),
+                          _buildSalesItemsTable(inv),
+                          const SizedBox(height: 20),
+                          _buildSalesTotals(inv),
+                          const SizedBox(height: 20),
+                          _buildSalesPaymentInfo(inv),
+                          if (inv.notes != null && inv.notes!.isNotEmpty) ...[
+                            const SizedBox(height: 20),
+                            _buildSalesSectionLabel('Notes', Icons.notes_rounded),
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: borderGrey),
+                              ),
+                              child: Text(inv.notes!, style: const TextStyle(fontSize: 13, color: softGrey, height: 1.5)),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                _buildSalesDialogFooter(context),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSalesDialogHeader(Invoice inv) {
+    final date = DateTime.parse(inv.date).toLocal();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(28, 28, 20, 24),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0F4C45), Color(0xFF0F766E), Color(0xFF14B8A6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 56, height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 2),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.receipt_rounded, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 2),
+                Text(inv.invoiceNumber, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 0.2)),
+                const SizedBox(height: 4),
+                Text(DateFormat('dd MMM yyyy, hh:mm a').format(date), style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 13)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _salesStatusBadge(inv.status),
+                    const SizedBox(width: 8),
+                    _salesDetailBadge(
+                      color: Colors.white,
+                      bgColor: Colors.white.withValues(alpha: 0.15),
+                      label: inv.paymentMethod,
+                      icon: inv.paymentMethod.toUpperCase() == 'UPI'
+                          ? Icons.phone_android_rounded
+                          : inv.paymentMethod.toUpperCase() == 'CARD'
+                              ? Icons.credit_card_rounded
+                              : Icons.payments_rounded,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 22),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _salesStatusBadge(String status) {
+    final isCancelled = status.toUpperCase() == 'CANCELLED';
+    final color = isCancelled ? const Color(0xFFF87171) : const Color(0xFF4ADE80);
+    return _salesDetailBadge(
+      color: color,
+      bgColor: color.withValues(alpha: 0.2),
+      label: isCancelled ? 'CANCELLED' : 'FINALIZED',
+      dot: true,
+    );
+  }
+
+  Widget _salesDetailBadge({required Color color, required Color bgColor, required String label, bool dot = false, IconData? icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (dot)
+            Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+          else if (icon != null)
+            Icon(icon, size: 12, color: color),
+          if (dot || icon != null) const SizedBox(width: 5),
+          Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalesSectionLabel(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: primaryTeal.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 14, color: primaryTeal),
+        ),
+        const SizedBox(width: 8),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: textDark, fontSize: 13, letterSpacing: 0.2)),
+      ],
+    );
+  }
+
+  Widget _buildSalesInfoGrid(List<_SalesInfoField> fields) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderGrey),
+      ),
+      child: Column(
+        children: List.generate(fields.length, (i) {
+          return Padding(
+            padding: EdgeInsets.only(top: i > 0 ? 12 : 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 30, height: 30,
+                  decoration: BoxDecoration(
+                    color: primaryTeal.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(fields[i].icon, size: 15, color: primaryTeal),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(fields[i].label, style: const TextStyle(fontSize: 10, color: softGrey, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+                      const SizedBox(height: 2),
+                      Text(fields[i].value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textDark)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildSalesItemsTable(Invoice inv) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderGrey),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+              border: const Border(bottom: BorderSide(color: borderGrey)),
+            ),
+            child: Row(
+              children: const [
+                Expanded(flex: 3, child: Text('Medicine', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: softGrey, letterSpacing: 0.3))),
+                Expanded(flex: 1, child: Text('Qty', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: softGrey, letterSpacing: 0.3))),
+                Expanded(flex: 2, child: Text('Price', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: softGrey, letterSpacing: 0.3))),
+                Expanded(flex: 1, child: Text('GST%', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: softGrey, letterSpacing: 0.3))),
+                Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: Text('Total', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: softGrey, letterSpacing: 0.3)))),
+              ],
+            ),
+          ),
+          ...List.generate(inv.items.length, (i) {
+            final item = inv.items[i];
+            final isLast = i == inv.items.length - 1;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: isLast ? null : const BoxDecoration(border: Border(bottom: BorderSide(color: borderGrey))),
+              child: Row(
+                children: [
+                  Expanded(flex: 3, child: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: textDark))),
+                  Expanded(flex: 1, child: Text('${item.qty}', style: const TextStyle(fontSize: 13, color: softGrey))),
+                  Expanded(flex: 2, child: Text('\u20B9${item.price.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13, color: softGrey))),
+                  Expanded(flex: 1, child: Text('${item.gst.toStringAsFixed(1)}%', style: const TextStyle(fontSize: 13, color: softGrey))),
+                  Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: Text('\u20B9${item.total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: textDark)))),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalesTotals(Invoice inv) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderGrey),
+      ),
+      child: Column(
+        children: [
+          _salesTotalRow('Subtotal', '\u20B9${inv.subtotal.toStringAsFixed(2)}', false),
+          if (inv.discount > 0) ...[
+            const Divider(height: 24, color: borderGrey),
+            _salesTotalRow('Discount', '-\u20B9${inv.discount.toStringAsFixed(2)}', false, valueColor: const Color(0xFFEF4444)),
+          ],
+          const Divider(height: 24, color: borderGrey),
+          _salesTotalRow('GST', '\u20B9${inv.gst.toStringAsFixed(2)}', false),
+          const Divider(height: 24, color: borderGrey),
+          _salesTotalRow('Grand Total', '\u20B9${inv.total.toStringAsFixed(2)}', true),
+        ],
+      ),
+    );
+  }
+
+  Widget _salesTotalRow(String label, String value, bool isBold, {Color? valueColor}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 14, fontWeight: isBold ? FontWeight.w700 : FontWeight.w500, color: isBold ? textDark : softGrey)),
+        Text(value, style: TextStyle(fontSize: 14, fontWeight: isBold ? FontWeight.w800 : FontWeight.w600, color: valueColor ?? (isBold ? primaryTeal : textDark))),
+      ],
+    );
+  }
+
+  Widget _buildSalesPaymentInfo(Invoice inv) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderGrey),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSalesSectionLabel('Payment', Icons.payments_rounded),
+          const SizedBox(height: 12),
+          _buildSalesInfoGrid([
+            _SalesInfoField(icon: Icons.account_balance_wallet_rounded, label: 'Method', value: inv.paymentMethod),
+            _SalesInfoField(icon: Icons.check_circle_rounded, label: 'Payment Status', value: inv.paymentStatus),
+            _SalesInfoField(icon: Icons.currency_rupee_rounded, label: 'Paid Amount', value: '\u20B9${inv.paidAmount.toStringAsFixed(2)}'),
+            _SalesInfoField(icon: inv.balanceAmount > 0 ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded, label: 'Balance', value: inv.balanceAmount > 0 ? '\u20B9${inv.balanceAmount.toStringAsFixed(2)}' : '\u20B90.00'),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalesDialogFooter(BuildContext dialogContext) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: borderGrey)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            icon: const Icon(Icons.close_rounded, size: 18),
+            label: const Text('Close'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryTeal,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1641,6 +1973,18 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       ],
     );
   }
+}
+
+class _SalesInfoField {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _SalesInfoField({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 }
 
 class _TableHeaderText extends StatelessWidget {

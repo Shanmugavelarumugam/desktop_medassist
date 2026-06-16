@@ -242,10 +242,12 @@ class _ExpiryBatchScreenState extends ConsumerState<ExpiryBatchScreen>
         case 'Near Expiry':
           if (!isNear || isQ || isR) return false;
           if (_daysSubFilter == '< 30 Days') return daysLeft <= 30;
-          if (_daysSubFilter == '30–60 Days')
+          if (_daysSubFilter == '30–60 Days') {
             return daysLeft > 30 && daysLeft <= 60;
-          if (_daysSubFilter == '60–90 Days')
+          }
+          if (_daysSubFilter == '60–90 Days') {
             return daysLeft > 60 && daysLeft <= 90;
+          }
           return true; // 'All Soon'
         case 'Quarantined':
           return isQ;

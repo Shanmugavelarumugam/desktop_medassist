@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:desktop_medassist/app/theme/app_colors.dart';
+import 'package:desktop_medassist/app/theme/app_radius.dart';
+
+import 'package:desktop_medassist/app/constants/app_constants.dart';
 import 'package:desktop_medassist/app/router/route_paths.dart';
 import 'package:desktop_medassist/features/auth/presentation/controller/auth_controller.dart';
 import 'package:desktop_medassist/features/inventory/presentation/screens/stock_screen.dart';
@@ -91,140 +95,175 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       backgroundColor: backgroundGrey,
       body: Row(
         children: [
-          // 1. LEFT PREMIUM NAVIGATION SIDEBAR (Exactly as requested in screenshot)
+          // 1. LEFT PREMIUM NAVIGATION SIDEBAR
           Container(
-            width: 260,
+            width: AppConstants.sidebarWidth,
             decoration: const BoxDecoration(
               color: Colors.white,
-              border: Border(right: BorderSide(color: borderGrey, width: 1)),
+              border: Border(right: BorderSide(color: AppColors.border, width: 1)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Branding Header (Logo + Name)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
-                  child: Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        'assets/logo/image.png',
-                        width: 200,
-                        height: 70,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.centerLeft,
-                        errorBuilder: (context, error, stackTrace) => const Row(
-                          children: [
-                            Icon(
-                              Icons.medical_services_rounded,
-                              size: 44,
-                              color: primaryTeal,
-                            ),
-                            SizedBox(width: 12),
-                            Text(
-                              'MEDASSIST',
-                              style: TextStyle(
-                                color: textDark,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 18,
-                                letterSpacing: 0.5,
-                              ),
+                // Branding Header
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AppColors.borderLight)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
+                        child: const Icon(Icons.medical_services_rounded, color: Colors.white, size: 24),
                       ),
-                    ),
+                      const SizedBox(width: 14),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'MEDASSIST',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          SizedBox(height: 1),
+                          Text(
+                            'Healthcare ERP',
+                            style: TextStyle(
+                              color: AppColors.textTertiary,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 11,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
 
-                // Navigation Items List
+                // Navigation Sections
                 Expanded(
                   child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Dashboard (always first, standalone)
                         _buildSidebarItem(
                           label: 'Dashboard',
                           icon: Icons.grid_view_rounded,
-                          activeColor: primaryTeal,
+                          activeColor: AppColors.primary,
                         ),
+                        const SizedBox(height: 4),
+
+                        // ── INVENTORY SECTION ──
+                        _buildSectionHeader('INVENTORY'),
                         _buildSidebarItem(
                           label: 'Stock',
                           icon: Icons.inventory_2_outlined,
-                          activeColor: primaryTeal,
-                        ),
-                        _buildSidebarItem(
-                          label: 'Billing / POS',
-                          icon: Icons.credit_card_outlined,
-                          activeColor: primaryTeal,
+                          activeColor: AppColors.primary,
                         ),
                         _buildSidebarItem(
                           label: 'Purchases',
                           icon: Icons.shopping_cart_outlined,
-                          activeColor: primaryTeal,
+                          activeColor: AppColors.primary,
                         ),
                         _buildSidebarItem(
                           label: 'Suppliers',
                           icon: Icons.local_shipping_outlined,
-                          activeColor: primaryTeal,
+                          activeColor: AppColors.primary,
                         ),
+                        const SizedBox(height: 4),
+
+                        // ── SALES SECTION ──
+                        _buildSectionHeader('SALES'),
                         _buildSidebarItem(
-                          label: 'Import',
-                          icon: Icons.cloud_upload_outlined,
-                          activeColor: primaryTeal,
+                          label: 'Billing / POS',
+                          icon: Icons.credit_card_outlined,
+                          activeColor: AppColors.primary,
                         ),
                         _buildSidebarItem(
                           label: 'Sales',
                           icon: Icons.trending_up_rounded,
-                          activeColor: primaryTeal,
+                          activeColor: AppColors.primary,
                         ),
+                        const SizedBox(height: 4),
+
+                        // ── ANALYTICS SECTION ──
+                        _buildSectionHeader('ANALYTICS'),
                         _buildSidebarItem(
                           label: 'Reports',
                           icon: Icons.bar_chart_outlined,
-                          activeColor: primaryTeal,
+                          activeColor: AppColors.primary,
                         ),
+                        const SizedBox(height: 4),
+
+                        // ── UTILITIES SECTION ──
+                        _buildSectionHeader('UTILITIES'),
                         _buildSidebarItem(
-                          label: 'Expiry & Batch',
-                          icon: Icons.calendar_today_outlined,
-                          activeColor: primaryTeal,
+                          label: 'Import',
+                          icon: Icons.cloud_upload_outlined,
+                          activeColor: AppColors.primary,
                         ),
                         _buildSidebarItem(
                           label: 'Barcode & QR',
                           icon: Icons.qr_code_scanner_outlined,
-                          activeColor: primaryTeal,
+                          activeColor: AppColors.primary,
+                        ),
+                        _buildSidebarItem(
+                          label: 'Expiry & Batch',
+                          icon: Icons.calendar_today_outlined,
+                          activeColor: AppColors.primary,
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                // Bottom Menu (Help & Log Out)
-                const Divider(height: 1, color: borderGrey),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                // Bottom Menu
+                Container(
+                  decoration: const BoxDecoration(
+                    border: Border(top: BorderSide(color: AppColors.borderLight)),
+                  ),
                   child: Column(
                     children: [
                       _buildSidebarItem(
                         label: 'Help Center',
                         icon: Icons.help_outline_rounded,
-                        activeColor: primaryTeal,
+                        activeColor: AppColors.primary,
                         isStatic: true,
                         onTap: () {},
                       ),
                       _buildSidebarItem(
                         label: 'Log Out',
                         icon: Icons.logout_rounded,
-                        activeColor: primaryTeal,
+                        activeColor: AppColors.error,
                         isStatic: true,
                         onTap: () async {
-                          await ref
-                              .read(authControllerProvider.notifier)
-                              .logout();
+                          await ref.read(authControllerProvider.notifier).logout();
                           if (context.mounted) {
                             context.go(RoutePaths.login);
                           }
                         },
                       ),
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
@@ -948,6 +987,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 4),
+      child: Text(
+        title,
+        style: const TextStyle(
+          color: AppColors.textTertiary,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.0,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSidebarItem({
     required String label,
     required IconData icon,
@@ -957,26 +1011,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }) {
     final bool isActive = !isStatic && _activeRoute == label;
 
-    return InkWell(
+    return _SidebarItemWidget(
+      label: label,
+      icon: icon,
+      activeColor: activeColor,
+      isActive: isActive,
+      isStatic: isStatic,
       onTap: isStatic
           ? onTap
           : () {
               ref.read(activeRouteProvider.notifier).changeRoute(label);
               if (label == 'Dashboard') {
-                ref
-                    .read(billingNotifierProvider.notifier)
-                    .loadAnalytics(forceRefresh: true);
-                ref
-                    .read(billingNotifierProvider.notifier)
-                    .loadInvoices(forceRefresh: true);
+                ref.read(billingNotifierProvider.notifier).loadAnalytics(forceRefresh: true);
+                ref.read(billingNotifierProvider.notifier).loadInvoices(forceRefresh: true);
               } else if (label == 'Suppliers') {
                 ref.read(purchaseNotifierProvider.notifier).setActiveTab(1);
                 ref.read(purchaseNotifierProvider.notifier).loadSuppliers();
               } else if (label == 'Purchases') {
                 ref.read(purchaseNotifierProvider.notifier).setActiveTab(0);
-                ref
-                    .read(purchaseNotifierProvider.notifier)
-                    .loadPurchaseOrders();
+                ref.read(purchaseNotifierProvider.notifier).loadPurchaseOrders();
               } else if (label == 'Expiry & Batch') {
                 ref.read(expiryBatchNotifierProvider.notifier).loadBatches();
               } else if (label == 'Barcode & QR') {
@@ -984,47 +1037,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ref.read(barcodeNotifierProvider.notifier).clearGenerated();
               }
             },
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          color: isActive
-              ? activeColor.withValues(alpha: 0.12)
-              : Colors.transparent,
-        ),
-        child: Row(
-          children: [
-            // Left vertical active tab indicator
-            Container(
-              width: 4,
-              height: 48, // Full height of the item
-              decoration: BoxDecoration(
-                color: isActive ? activeColor : Colors.transparent,
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(4),
-                  bottomRight: Radius.circular(4),
-                ),
-              ),
-            ),
-            const SizedBox(width: 20),
-            Icon(
-              icon,
-              color: isActive ? activeColor : const Color(0xFF64748B),
-              size: isActive ? 22 : 20,
-            ),
-            const SizedBox(width: 14),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFF475569),
-                fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -1194,6 +1206,90 @@ class LineChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant LineChartPainter oldDelegate) =>
       oldDelegate.dataPoints != dataPoints;
+}
+
+class _SidebarItemWidget extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final Color activeColor;
+  final bool isActive;
+  final bool isStatic;
+  final VoidCallback? onTap;
+
+  const _SidebarItemWidget({
+    required this.label,
+    required this.icon,
+    required this.activeColor,
+    required this.isActive,
+    this.isStatic = false,
+    this.onTap,
+  });
+
+  @override
+  State<_SidebarItemWidget> createState() => _SidebarItemWidgetState();
+}
+
+class _SidebarItemWidgetState extends State<_SidebarItemWidget> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: AppConstants.animationFast,
+          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: widget.isActive
+                ? widget.activeColor.withValues(alpha: 0.1)
+                : _hovered ? AppColors.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: widget.isActive
+                ? Border.all(color: widget.activeColor.withValues(alpha: 0.15))
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                widget.icon,
+                color: widget.isActive
+                    ? widget.activeColor
+                    : _hovered ? AppColors.textSecondary : AppColors.textTertiary,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: widget.isActive
+                        ? AppColors.textPrimary
+                        : _hovered ? AppColors.textPrimary : AppColors.textSecondary,
+                    fontWeight: widget.isActive ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              if (widget.isActive)
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: widget.activeColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 const softGrey = Color(0xFF94A3B8);

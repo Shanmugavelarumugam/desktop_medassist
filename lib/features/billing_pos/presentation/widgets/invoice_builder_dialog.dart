@@ -222,7 +222,7 @@ class _InvoiceBuilderDialogState extends ConsumerState<InvoiceBuilderDialog> {
             ? 'Walk-in Customer'
             : _customerNameController.text.trim(),
         patientPhone: _phoneController.text.trim().isEmpty
-            ? '9876543210'
+            ? ''
             : _phoneController.text.trim(),
         discountAmount: discount,
         paymentMode: paymentMethod,

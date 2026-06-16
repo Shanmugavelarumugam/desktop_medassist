@@ -24,3 +24,5 @@ plugins {
 }
 
 include(":app")
+rootProject.name = "desktop_medassist_android"
+

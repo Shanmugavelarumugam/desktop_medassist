@@ -24,13 +24,21 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       if (response.data != null && response.data['success'] == true) {
         final data = response.data['data'];
-        final token = data['token'];
-        final refreshToken = data['refreshToken'];
-        final userData = AuthUser.fromJson(data['user']);
+        final String? token = data['token'];
+        final String? refreshToken = data['refreshToken'];
+        final dynamic rawUser = data['user'];
+        if (rawUser == null || rawUser is! Map<String, dynamic>) {
+          throw Exception('User data missing from server response');
+        }
+        final userData = AuthUser.fromJson(rawUser);
 
-        // Persist session tokens and user data
-        await _localDataSource.saveToken(token);
-        await _localDataSource.saveRefreshToken(refreshToken);
+        // Persist session tokens and user data (only if present)
+        if (token != null && token.isNotEmpty) {
+          await _localDataSource.saveToken(token);
+        }
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          await _localDataSource.saveRefreshToken(refreshToken);
+        }
         await _localDataSource.saveUser(userData);
 
         return userData;

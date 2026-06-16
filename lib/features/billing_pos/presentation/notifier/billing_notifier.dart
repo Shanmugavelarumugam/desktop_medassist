@@ -269,7 +269,7 @@ class BillingNotifier extends Notifier<BillingState> {
             ? 'Walk-in Customer'
             : patientName.trim(),
         'patientPhone': patientPhone.trim().isEmpty
-            ? '9876543210'
+            ? ''
             : patientPhone.trim(),
         'discountAmount': state.discount,
         'discountPercentage': 0,
